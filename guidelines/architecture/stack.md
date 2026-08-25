@@ -62,4 +62,3 @@ Whether the Rust core builds its VT parser on the `vte` crate or on `alacritty_t
 
 The syntax highlighting engine in the Rust core is undecided. tree-sitter and syntect are the candidates.
 
-Whether Vite+ (`vp check`, `vp run`) fronts the oxlint, oxfmt, and typecheck commands or Bun scripts call them directly is undecided. Vite+ is a 0.3 beta that forwards package commands to Bun but does not manage Bun as a runtime.

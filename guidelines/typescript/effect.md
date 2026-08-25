@@ -73,7 +73,6 @@ The reference codebase also uses `effect-query`, `effect-tanstack-start`, `effec
 | `effect-log` | 0.36.0 | Peers on Effect 3 and last published in 2024. Core `Logger` is enough |
 | `@codeforbreakfast/eslint-effect` | 0.8.5 | ESLint, last published 2025-12. The language-service diagnostics and oxlint cover it |
 | `@effect/vitest` | 4.0.0-rc.112 | The project has no automated test suite |
-| `vite-plus` | 0.3.0 beta | Its `vp check` would wrap the same oxlint and oxfmt. Undecided; see open questions in `guidelines/architecture/stack.md` |
 
 ## Conventions
 

@@ -1,0 +1,5 @@
+{
+  "extends": "@exsomnis/config/tsconfig.base.json",
+  "include": ["apps/**/*.ts", "packages/**/*.ts", "crates/*/index.d.ts", "oxlint.config.ts"],
+  "exclude": ["node_modules", "target", "dist"]
+}

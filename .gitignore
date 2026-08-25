@@ -1,0 +1,30 @@
+prompt-context.md
+
+# Bun
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Rust and native addons
+target/
+*.node
+
+# Environment
+.env
+.env*.local
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*~
+
+# Logs and caches
+*.log
+.cache/
+
+# Local tool state
+.commandcode/

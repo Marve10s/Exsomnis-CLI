@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "ignore": ["crates/*/index.js"],
+  "workspaces": {
+    ".": { "ignoreDependencies": ["effect"] },
+    "apps/exsomnis": {},
+    "packages/config": {},
+    "packages/oxlint-plugins": { "entry": ["src/*.ts"] },
+    "crates/core": {},
+  },
+}

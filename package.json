@@ -1,0 +1,53 @@
+{
+  "name": "exsomnis-workspace",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*",
+      "crates/*"
+    ],
+    "catalog": {
+      "effect": "4.0.0-rc.112",
+      "@effect/platform-bun": "4.0.0-rc.112",
+      "@effect/language-service": "0.87.2",
+      "@effect/tsgo": "0.37.0",
+      "@napi-rs/cli": "3.8.6",
+      "@types/bun": "1.4.0",
+      "eslint": "10.9.1",
+      "typescript": "7.0.2"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "prepare": "effect-tsgo patch",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint -c oxlint.config.ts --type-aware --report-unused-disable-directives-severity=error .",
+    "lint:fix": "oxlint -c oxlint.config.ts --type-aware --report-unused-disable-directives-severity=error --fix .",
+    "fmt": "oxfmt --write .",
+    "fmt:check": "oxfmt --check .",
+    "knip": "knip",
+    "check": "bun run fmt:check && bun run lint && bun run typecheck",
+    "build:native": "bun run --filter @exsomnis/core build",
+    "build:native:debug": "bun run --filter @exsomnis/core build:debug",
+    "compile": "bun run --filter exsomnis compile"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@effect/tsgo": "catalog:",
+    "@exsomnis/config": "workspace:*",
+    "@exsomnis/oxlint-plugins": "workspace:*",
+    "@types/bun": "catalog:",
+    "effect": "catalog:",
+    "knip": "6.32.2",
+    "lefthook": "2.1.10",
+    "oxfmt": "0.65.0",
+    "oxlint": "1.80.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "typescript": "catalog:"
+  },
+  "overrides": {
+    "effect": "$effect"
+  },
+  "packageManager": "bun@1.4.0"
+}

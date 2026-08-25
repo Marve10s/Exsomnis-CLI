@@ -1,0 +1,13 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: oxlint
+      run: bun oxlint -c oxlint.config.ts --fix {staged_files}
+      stage_fixed: true
+    - name: oxfmt
+      run: bun oxfmt --write {staged_files}
+      stage_fixed: true
+    - name: cargo fmt
+      glob: '*.rs'
+      run: cargo fmt -- {staged_files}
+      stage_fixed: true

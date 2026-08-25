@@ -1,0 +1,23 @@
+{
+  "name": "@exsomnis/core",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "catalog:"
+  },
+  "napi": {
+    "binaryName": "exsomnis-core",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-gnu"
+    ]
+  }
+}

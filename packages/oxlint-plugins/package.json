@@ -1,0 +1,14 @@
+{
+  "name": "@exsomnis/oxlint-plugins",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./forbidden-unknown-cast": "./src/forbidden-unknown-cast.ts",
+    "./prefer-effect": "./src/prefer-effect.ts",
+    "./require-disable-description": "./src/require-disable-description.ts"
+  },
+  "devDependencies": {
+    "eslint": "catalog:"
+  }
+}

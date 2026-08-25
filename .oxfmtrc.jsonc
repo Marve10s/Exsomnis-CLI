@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "bracketSpacing": true,
+  "ignorePatterns": [
+    "node_modules/**",
+    "target/**",
+    "dist/**",
+    "crates/*/index.js",
+    "crates/*/index.d.ts",
+    "**/*.md",
+  ],
+}

@@ -1,6 +1,6 @@
-# Effect stack
+# Effect
 
-Exsomnis's TypeScript side is written in Effect end to end. This document records the Effect version, the packages in use, the conventions carried over from the reference codebase, and the rules that follow. Versions were checked against the npm registry on 2026-08-25.
+Exsomnis's TypeScript side is written in Effect end to end. This document records the Effect version, the packages in use, the conventions carried over from the reference codebase, and the rules that follow. Enforcement lives in `guidelines/typescript/lint.md`. Versions were checked against the npm registry on 2026-08-25.
 
 ## Reference codebase
 
@@ -73,7 +73,7 @@ The reference codebase also uses `effect-query`, `effect-tanstack-start`, `effec
 | `effect-log` | 0.36.0 | Peers on Effect 3 and last published in 2024. Core `Logger` is enough |
 | `@codeforbreakfast/eslint-effect` | 0.8.5 | ESLint, last published 2025-12. The language-service diagnostics and oxlint cover it |
 | `@effect/vitest` | 4.0.0-rc.112 | The project has no automated test suite |
-| `vite-plus` | 0.3.0 beta | Its `vp check` would wrap the same oxlint and oxfmt. Undecided; see open questions in `exsomnis-context.md` |
+| `vite-plus` | 0.3.0 beta | Its `vp check` would wrap the same oxlint and oxfmt. Undecided; see open questions in `guidelines/architecture/stack.md` |
 
 ## Conventions
 
@@ -84,7 +84,7 @@ These are the conventions the reference codebase applies, adopted as written.
 Every service is a class-style `Context.Service`, with a namespaced key and a `make` effect, and an explicit static `layer`. No `Effect.Service`, no `.Default`, no generated accessors.
 
 ```ts
-export class GitService extends Context.Service<GitService>()('@exsomnis/git/GitService', {
+export class GitService extends Context.Service<GitService>()('exsomnis/git/GitService', {
   make: Effect.gen(function* () {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner
     return { status, diff, mergeBase }
@@ -120,31 +120,6 @@ Log level, format, and global annotations live on the runtime layer: `Logger.lay
 
 One `TracerLive(serviceName)` layer owns OTLP export and returns `Layer.empty` when no endpoint is configured.
 
-### Enforcement
-
-`@effect/tsgo` runs inside `tsc --noEmit` with all 95 of its diagnostics at `error`, except `missingPipeableSignature` and `missedPipeableOpportunity`, which exist for authors of pipeable Effect libraries and would force overloads onto every exported helper. The important ones for this codebase: `tryCatchInEffectGen`, `asyncFunction`, `newPromise`, `promiseInEffectSuccess`, `runEffectInsideEffect`, `floatingEffect`, `leakingRequirements`, `layerMergeAllWithDependencies`, `strictEffectProvide`, `serviceNotAsClass`, `deterministicKeys` (service keys follow `exsomnis/<file>/<Class>`), `extendsNativeError`, `processEnv`, `nodeBuiltinImport`, `globalConsole`, `strictBooleanExpressions`, `unsafeEffectTypeAssertion`, `preferSchemaOverJson`, `outdatedApi`. An exception is `// @effect-diagnostics <name>:off -- <reason>`; the name carries no `effect/` prefix because the patched `tsc` ignores the prefixed form. `@effect/language-service` (the editor plugin) knows 77 of the 95 names, so the editor may not show every diagnostic the CLI enforces.
-
-oxlint runs type-aware with `typescript/no-explicit-any`, `no-non-null-assertion`, the `no-unsafe-*` family, `no-floating-promises` (no `void` escape), `no-misused-promises`, `switch-exhaustiveness-check`, `strict-boolean-expressions` at its strictest, `no-shadow`, `consistent-type-imports`, `ban-ts-comment`, `no-restricted-imports` (zod, `node:fs`, `node:path`, `node:child_process`), `promise/avoid-new`, `unicorn/no-process-exit`, `import/no-cycle`, and, in `apps/**`, `consistent-type-assertions` set to `never`.
-
-The custom rules in `packages/oxlint-plugins` cover what neither tool sees:
-
-| Rule | What it rejects |
-|---|---|
-| `effect-syntax/no-try-statement` | Any `try`, `catch`, or `finally`, in every file |
-| `effect-syntax/try-promise-only` | `async`, `await`, `new Promise`, `Promise.*`, and `Promise` types outside the function passed directly to `Effect.tryPromise` |
-| `effect-style/context-service-contract` | Function-style `Context.Service`, `Effect.Service`, `Effect.Tag`, `Context.Tag`, `accessors`, a service without `make` or a static `layer`, a key that does not end with the class name |
-| `effect-style/schema-tagged-errors` | Classes extending `Error` or `Data.TaggedError`, `*Error` classes not extending `Schema.TaggedError`, `throw`, `new Error` |
-| `effect-style/no-error-erasure` | `Effect.orDie`, `Effect.orDieWith`, `Effect.catchCause`, and generic `Effect.catch` outside `bin.ts` |
-| `effect-style/runtime-boundary` | Every `Effect.run*`; `BunRuntime.runMain` outside `bin.ts` or more than once |
-| `effect-style/named-effect-fn` | `Effect.fn` without a `Service.method` string literal; `Effect.fnUntraced` |
-| `effect-style/no-module-mutable-state` | Module-level `let` and `var` |
-| `effect-boundaries/adapter-error` | `Effect.try` or `Effect.tryPromise` without the object form, or a `catch` that does not call `serializeUnknownError` |
-| `architecture/native-core-import` | Importing `@exsomnis/core` anywhere except `apps/exsomnis/src/core-native.ts` |
-| `disable-comments/require-description` | Any oxlint, eslint, TypeScript, or Effect suppression without ` -- <reason>` |
-| `code-style/no-comments` | Any comment that is not a suppression directive |
-
-The rules resolve imports by name (`import { Effect } from 'effect'`, `import * as Effect from 'effect/Effect'`, `import { fn } from 'effect/Effect'`), so aliasing through a local variable defeats them; `typescript/no-shadow` keeps the name-based resolution honest. JS-plugin rules have no type information, so anything that needs types stays with the tsgo diagnostics. The rules were exercised against fixture files containing one violation per rule before being adopted; the fixtures are not committed because the project keeps no test suite.
-
 ## How Effect meets the Rust core
 
 The Rust core is a native library loaded through N-API. On the TypeScript side it is one `Context.Service`, `TerminalHost`, whose layer loads the library once and releases it on scope close. Synchronous native calls are wrapped in `Effect.sync` or `Effect.try` with a tagged error. Damage notifications and PTY exits arrive through `Stream.callback` or a `Queue` fed by the native callback.
@@ -160,5 +135,10 @@ Effect's `ChildProcess` module has no pseudo-terminal option. Agent, Shell, and 
 - No Zod or other validation library. `Schema` declares every type and decodes every boundary except the per-frame N-API path.
 - Interface state lives in `Atom`. Nothing mirrors it in plain variables.
 - Before adding an Effect community package, confirm it peers on Effect 4 and was published in the last six months. Record it in this file.
+- Service keys follow the `deterministicKeys` diagnostic: `exsomnis/<file-name>/<ClassName>`, for example `exsomnis/core-native/CoreNative`.
+- All TypeScript application code is written with Effect 4, pinned to the exact release candidate in `package.json` and forced to one copy through `overrides`. Bumps are deliberate commits.
+- Every meaningful operation is a named `Effect.fn('Service.method')`; I/O edges carry `Effect.withSpan`. Log configuration lives on the runtime layer.
+- The process runs once, at `bin.ts`, through `BunRuntime.runMain`. No `runSync`, `runPromise`, or `runFork` anywhere else.
+- Prefer a module from `effect` or a package listed above over a hand-written replacement.
 - Before using an `unstable/*` module, read its current source in `node_modules`. Docs and examples for Effect 3 do not apply.
 - Follow the `effect-ts-practices` skill where this file is silent, and the reference codebase where the skill is silent.

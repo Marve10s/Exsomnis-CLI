@@ -6,6 +6,7 @@ pre-commit:
       run: bun oxlint -c oxlint.config.ts --fix {staged_files}
       stage_fixed: true
     - name: oxfmt
+      glob: '*.{ts,js,json,jsonc,yml,yaml}'
       run: bun oxfmt --write {staged_files}
       stage_fixed: true
     - name: cargo fmt

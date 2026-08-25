@@ -2,6 +2,7 @@ pre-commit:
   parallel: true
   jobs:
     - name: oxlint
+      glob: '*.{ts,js,jsonc}'
       run: bun oxlint -c oxlint.config.ts --fix {staged_files}
       stage_fixed: true
     - name: oxfmt

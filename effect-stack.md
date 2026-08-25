@@ -122,9 +122,28 @@ One `TracerLive(serviceName)` layer owns OTLP export and returns `Layer.empty` w
 
 ### Enforcement
 
-`@effect/language-service` runs with every diagnostic set to `error`, including `tryCatchInEffectGen`, `runEffectInsideEffect`, `floatingEffect`, `leakingRequirements`, `layerMergeAllWithDependencies`, `catchAllToMapError`, `preferSchemaOverJson`, and `outdatedApi`. An exception requires an inline `// @effect-diagnostics <rule>:off` with a written reason.
+`@effect/tsgo` runs inside `tsc --noEmit` with all 95 of its diagnostics at `error`, except `missingPipeableSignature` and `missedPipeableOpportunity`, which exist for authors of pipeable Effect libraries and would force overloads onto every exported helper. The important ones for this codebase: `tryCatchInEffectGen`, `asyncFunction`, `newPromise`, `promiseInEffectSuccess`, `runEffectInsideEffect`, `floatingEffect`, `leakingRequirements`, `layerMergeAllWithDependencies`, `strictEffectProvide`, `serviceNotAsClass`, `deterministicKeys` (service keys follow `exsomnis/<file>/<Class>`), `extendsNativeError`, `processEnv`, `nodeBuiltinImport`, `globalConsole`, `strictBooleanExpressions`, `unsafeEffectTypeAssertion`, `preferSchemaOverJson`, `outdatedApi`. An exception is `// @effect-diagnostics <name>:off -- <reason>`; the name carries no `effect/` prefix because the patched `tsc` ignores the prefixed form. `@effect/language-service` (the editor plugin) knows 77 of the 95 names, so the editor may not show every diagnostic the CLI enforces.
 
-oxlint runs type-aware with three custom rules copied from the reference codebase: `prefer-effect` (bans `node:fs` and `node:path` in favour of `FileSystem` and `Path`), `forbidden-unknown-cast` (bans `as unknown as`), and `require-disable-description` (every disable comment carries a reason). `no-console` is an error. oxfmt formats.
+oxlint runs type-aware with `typescript/no-explicit-any`, `no-non-null-assertion`, the `no-unsafe-*` family, `no-floating-promises` (no `void` escape), `no-misused-promises`, `switch-exhaustiveness-check`, `strict-boolean-expressions` at its strictest, `no-shadow`, `consistent-type-imports`, `ban-ts-comment`, `no-restricted-imports` (zod, `node:fs`, `node:path`, `node:child_process`), `promise/avoid-new`, `unicorn/no-process-exit`, `import/no-cycle`, and, in `apps/**`, `consistent-type-assertions` set to `never`.
+
+The custom rules in `packages/oxlint-plugins` cover what neither tool sees:
+
+| Rule | What it rejects |
+|---|---|
+| `effect-syntax/no-try-statement` | Any `try`, `catch`, or `finally`, in every file |
+| `effect-syntax/try-promise-only` | `async`, `await`, `new Promise`, `Promise.*`, and `Promise` types outside the function passed directly to `Effect.tryPromise` |
+| `effect-style/context-service-contract` | Function-style `Context.Service`, `Effect.Service`, `Effect.Tag`, `Context.Tag`, `accessors`, a service without `make` or a static `layer`, a key that does not end with the class name |
+| `effect-style/schema-tagged-errors` | Classes extending `Error` or `Data.TaggedError`, `*Error` classes not extending `Schema.TaggedError`, `throw`, `new Error` |
+| `effect-style/no-error-erasure` | `Effect.orDie`, `Effect.orDieWith`, `Effect.catchCause`, and generic `Effect.catch` outside `bin.ts` |
+| `effect-style/runtime-boundary` | Every `Effect.run*`; `BunRuntime.runMain` outside `bin.ts` or more than once |
+| `effect-style/named-effect-fn` | `Effect.fn` without a `Service.method` string literal; `Effect.fnUntraced` |
+| `effect-style/no-module-mutable-state` | Module-level `let` and `var` |
+| `effect-boundaries/adapter-error` | `Effect.try` or `Effect.tryPromise` without the object form, or a `catch` that does not call `serializeUnknownError` |
+| `architecture/native-core-import` | Importing `@exsomnis/core` anywhere except `apps/exsomnis/src/core-native.ts` |
+| `disable-comments/require-description` | Any oxlint, eslint, TypeScript, or Effect suppression without ` -- <reason>` |
+| `code-style/no-comments` | Any comment that is not a suppression directive |
+
+The rules resolve imports by name (`import { Effect } from 'effect'`, `import * as Effect from 'effect/Effect'`, `import { fn } from 'effect/Effect'`), so aliasing through a local variable defeats them; `typescript/no-shadow` keeps the name-based resolution honest. JS-plugin rules have no type information, so anything that needs types stays with the tsgo diagnostics. The rules were exercised against fixture files containing one violation per rule before being adopted; the fixtures are not committed because the project keeps no test suite.
 
 ## How Effect meets the Rust core
 

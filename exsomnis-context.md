@@ -110,6 +110,8 @@ The first release targets macOS because that is the current daily environment. T
 
 Distribution uses compiled Bun executables with the Rust library built per platform. The goal is one installation command and no runtime that users manage separately.
 
+CI runs on every pull request and push to `main`: formatting, type-aware lint, typecheck with every Effect diagnostic, knip, clippy with warnings denied, cargo-deny, cargo-machete, `bun audit`, a check that the committed napi bindings match a fresh build, and a compile-and-run smoke test on a macOS 15 arm64 runner. Every action is pinned to a commit SHA and the workflow token is read-only.
+
 ## Product boundaries
 
 Exsomnis is not a coding agent. It does not replace provider CLIs, call model APIs, or normalize conversations across providers.

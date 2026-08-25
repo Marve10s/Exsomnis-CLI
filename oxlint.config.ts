@@ -1,11 +1,26 @@
 import { defineConfig } from 'oxlint';
 
+const restrictedImports = [
+  { name: 'zod', message: 'Use Schema from effect.' },
+  { name: 'node:fs', message: 'Use FileSystem from effect.' },
+  { name: 'fs', message: 'Use FileSystem from effect.' },
+  { name: 'node:fs/promises', message: 'Use FileSystem from effect.' },
+  { name: 'fs/promises', message: 'Use FileSystem from effect.' },
+  { name: 'node:path', message: 'Use Path from effect.' },
+  { name: 'path', message: 'Use Path from effect.' },
+  { name: 'node:child_process', message: 'Use ChildProcess from effect/unstable/process.' },
+  { name: 'child_process', message: 'Use ChildProcess from effect/unstable/process.' },
+];
+
 export default defineConfig({
   plugins: ['eslint', 'typescript', 'unicorn', 'oxc', 'import', 'promise'],
   jsPlugins: [
-    '@exsomnis/oxlint-plugins/require-disable-description',
-    '@exsomnis/oxlint-plugins/forbidden-unknown-cast',
-    '@exsomnis/oxlint-plugins/prefer-effect',
+    '@exsomnis/oxlint-plugins/effect-syntax',
+    '@exsomnis/oxlint-plugins/effect-style',
+    '@exsomnis/oxlint-plugins/effect-boundaries',
+    '@exsomnis/oxlint-plugins/architecture',
+    '@exsomnis/oxlint-plugins/disable-comments',
+    '@exsomnis/oxlint-plugins/code-style',
   ],
   env: {
     builtin: true,
@@ -24,18 +39,108 @@ export default defineConfig({
   ],
   rules: {
     'no-console': 'error',
+    eqeqeq: ['error', 'always'],
+    curly: ['error', 'all'],
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: restrictedImports,
+        patterns: [{ group: ['zod/*'], message: 'Use Schema from effect.' }],
+      },
+    ],
+    'typescript/no-explicit-any': ['error', { fixToUnknown: false, ignoreRestArgs: false }],
+    'typescript/no-non-null-assertion': 'error',
+    'typescript/no-unsafe-argument': 'error',
+    'typescript/no-unsafe-assignment': 'error',
+    'typescript/no-unsafe-call': 'error',
+    'typescript/no-unsafe-member-access': ['error', { allowOptionalChaining: false }],
+    'typescript/no-unsafe-return': 'error',
+    'typescript/no-unsafe-type-assertion': 'error',
+    'typescript/no-floating-promises': [
+      'error',
+      { checkThenables: true, ignoreIIFE: false, ignoreVoid: false },
+    ],
+    'typescript/no-misused-promises': [
+      'error',
+      { checksConditionals: true, checksSpreads: true, checksVoidReturn: true },
+    ],
+    'typescript/switch-exhaustiveness-check': [
+      'error',
+      {
+        allowDefaultCaseForExhaustiveSwitch: false,
+        considerDefaultExhaustiveForUnions: false,
+        requireDefaultForNonUnion: false,
+      },
+    ],
+    'typescript/strict-boolean-expressions': [
+      'error',
+      {
+        allowAny: false,
+        allowNullableBoolean: false,
+        allowNullableEnum: false,
+        allowNullableNumber: false,
+        allowNullableObject: false,
+        allowNullableString: false,
+        allowNumber: false,
+        allowString: false,
+      },
+    ],
+    'typescript/no-inferrable-types': 'error',
+    'typescript/no-shadow': 'error',
+    'typescript/consistent-type-imports': [
+      'error',
+      { prefer: 'type-imports', fixStyle: 'separate-type-imports', disallowTypeAnnotations: true },
+    ],
+    'typescript/consistent-type-exports': 'error',
+    'typescript/no-import-type-side-effects': 'error',
+    'typescript/ban-ts-comment': [
+      'error',
+      {
+        'ts-expect-error': 'allow-with-description',
+        'ts-ignore': true,
+        'ts-nocheck': true,
+        'ts-check': false,
+        minimumDescriptionLength: 10,
+      },
+    ],
+    'import/no-cycle': 'error',
+    'import/no-duplicates': 'error',
+    'unicorn/no-abusive-eslint-disable': 'error',
+    'unicorn/no-process-exit': 'error',
+    'promise/avoid-new': 'error',
+    'effect-syntax/no-try-statement': 'error',
+    'architecture/native-core-import': 'error',
     'disable-comments/require-description': 'error',
-    'unknown-cast/forbidden': 'error',
-    'prefer-effect/no-node-path': 'error',
-    'prefer-effect/no-node-fs': 'error',
+    'code-style/no-comments': 'error',
     'typescript/consistent-return': 'off',
     'typescript/explicit-function-return-type': 'off',
     'typescript/explicit-module-boundary-types': 'off',
     'typescript/consistent-type-definitions': 'off',
-    'typescript/no-empty-object-type': 'off',
     'typescript/array-type': 'off',
     'unicorn/no-array-callback-reference': 'off',
     'unicorn/no-array-method-this-argument': 'off',
     'import/no-default-export': 'off',
   },
+  overrides: [
+    {
+      files: ['**/packages/oxlint-plugins/**/*.ts'],
+      rules: {
+        'typescript/no-unsafe-enum-comparison': 'off',
+      },
+    },
+    {
+      files: ['**/apps/**/*.ts'],
+      rules: {
+        'typescript/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
+        'effect-syntax/try-promise-only': 'error',
+        'effect-style/context-service-contract': 'error',
+        'effect-style/schema-tagged-errors': 'error',
+        'effect-style/no-error-erasure': 'error',
+        'effect-style/runtime-boundary': 'error',
+        'effect-style/named-effect-fn': 'error',
+        'effect-style/no-module-mutable-state': 'error',
+        'effect-boundaries/adapter-error': 'error',
+      },
+    },
+  ],
 });

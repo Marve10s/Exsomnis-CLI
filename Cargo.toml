@@ -2,7 +2,117 @@
 members = ["crates/*"]
 resolver = "3"
 
+[profile.dev]
+panic = "unwind"
+
 [profile.release]
+panic = "unwind"
 lto = true
 codegen-units = 1
 strip = "symbols"
+
+[workspace.lints.rust]
+warnings = { level = "warn", priority = -2 }
+future_incompatible = { level = "warn", priority = -1 }
+rust_2024_compatibility = { level = "warn", priority = -1 }
+
+absolute_paths_not_starting_with_crate = "warn"
+deprecated_in_future = "warn"
+deprecated_safe_2024 = "deny"
+elided_lifetimes_in_paths = "warn"
+explicit_outlives_requirements = "warn"
+ffi_unwind_calls = "deny"
+let_underscore_drop = "deny"
+meta_variable_misuse = "warn"
+missing_debug_implementations = "warn"
+missing_unsafe_on_extern = "deny"
+non_ascii_idents = "warn"
+redundant_imports = "warn"
+redundant_lifetimes = "warn"
+single_use_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unnameable_types = "warn"
+unit_bindings = "warn"
+unreachable_pub = "warn"
+unsafe_attr_outside_unsafe = "deny"
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+unstable_features = "deny"
+unused_crate_dependencies = "deny"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"
+unused_results = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -2 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+allow_attributes_without_reason = "deny"
+arithmetic_side_effects = "deny"
+as_conversions = "deny"
+as_pointer_underscore = "deny"
+as_underscore = "deny"
+cast_lossless = "deny"
+cast_possible_truncation = "deny"
+cast_possible_wrap = "deny"
+cast_precision_loss = "deny"
+cast_ptr_alignment = "deny"
+cast_sign_loss = "deny"
+dbg_macro = "deny"
+default_numeric_fallback = "deny"
+default_union_representation = "deny"
+disallowed_macros = "deny"
+disallowed_methods = "deny"
+disallowed_script_idents = "deny"
+exit = "deny"
+expect_used = "deny"
+fallible_impl_from = "deny"
+fn_to_numeric_cast_any = "deny"
+indexing_slicing = "deny"
+integer_division = "deny"
+iter_over_hash_type = "deny"
+large_include_file = "deny"
+let_underscore_must_use = "deny"
+let_underscore_untyped = "deny"
+lossy_float_literal = "deny"
+map_err_ignore = "deny"
+match_wild_err_arm = "deny"
+match_wildcard_for_single_variants = "deny"
+mem_forget = "deny"
+mixed_read_write_in_expression = "deny"
+modulo_arithmetic = "deny"
+multiple_unsafe_ops_per_block = "deny"
+panic = "deny"
+panic_in_result_fn = "deny"
+print_stderr = "deny"
+print_stdout = "deny"
+rest_pat_in_fully_bound_structs = "deny"
+shadow_reuse = "deny"
+shadow_same = "deny"
+shadow_unrelated = "deny"
+string_slice = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+unwrap_used = "deny"
+unused_result_ok = "deny"
+wildcard_enum_match_arm = "deny"
+
+clone_on_ref_ptr = "warn"
+cognitive_complexity = "warn"
+mutex_atomic = "warn"
+mutex_integer = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+
+cargo_common_metadata = { level = "allow", priority = 1 }
+manual_assert = { level = "allow", priority = 1 }
+missing_errors_doc = { level = "allow", priority = 1 }
+missing_panics_doc = { level = "allow", priority = 1 }
+missing_safety_doc = { level = "allow", priority = 1 }
+multiple_crate_versions = { level = "allow", priority = 1 }

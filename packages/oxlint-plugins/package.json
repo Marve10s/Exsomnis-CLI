@@ -4,11 +4,15 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./forbidden-unknown-cast": "./src/forbidden-unknown-cast.ts",
-    "./prefer-effect": "./src/prefer-effect.ts",
-    "./require-disable-description": "./src/require-disable-description.ts"
+    "./architecture": "./src/architecture.ts",
+    "./code-style": "./src/code-style.ts",
+    "./disable-comments": "./src/disable-comments.ts",
+    "./effect-boundaries": "./src/effect-boundaries.ts",
+    "./effect-style": "./src/effect-style.ts",
+    "./effect-syntax": "./src/effect-syntax.ts"
   },
   "devDependencies": {
+    "@typescript-eslint/utils": "catalog:",
     "eslint": "catalog:"
   }
 }

@@ -1,0 +1,48 @@
+msrv = "1.93"
+avoid-breaking-exported-api = false
+
+allow-dbg-in-tests = false
+allow-expect-in-consts = false
+allow-expect-in-tests = false
+allow-indexing-slicing-in-tests = false
+allow-panic-in-tests = false
+allow-print-in-tests = false
+allow-unwrap-in-consts = false
+allow-unwrap-in-tests = false
+check-incompatible-msrv-in-tests = true
+
+allowed-duplicate-crates = ["syn"]
+cognitive-complexity-threshold = 20
+stack-size-threshold = 262144
+too-many-arguments-threshold = 6
+too-many-lines-threshold = 80
+type-complexity-threshold = 200
+warn-on-all-wildcard-imports = true
+
+disallowed-macros = [
+  { path = "std::assert", reason = "assertions can panic inside the Bun host" },
+  { path = "std::assert_eq", reason = "assertions can panic inside the Bun host" },
+  { path = "std::assert_ne", reason = "assertions can panic inside the Bun host" },
+  { path = "std::debug_assert", reason = "debug assertions can panic during development" },
+  { path = "std::debug_assert_eq", reason = "debug assertions can panic during development" },
+  { path = "std::debug_assert_ne", reason = "debug assertions can panic during development" },
+]
+
+disallowed-methods = [
+  { path = "std::vec::Vec::with_capacity", reason = "validate the bound and use try_reserve" },
+  { path = "std::vec::Vec::reserve", reason = "use try_reserve and propagate allocation failure" },
+  { path = "std::vec::Vec::reserve_exact", reason = "use try_reserve_exact and propagate allocation failure" },
+  { path = "std::string::String::with_capacity", reason = "validate the bound and use try_reserve" },
+  { path = "std::string::String::reserve", reason = "use try_reserve and propagate allocation failure" },
+  { path = "std::string::String::reserve_exact", reason = "use try_reserve_exact and propagate allocation failure" },
+  { path = "std::collections::VecDeque::with_capacity", reason = "validate the bound and use try_reserve" },
+  { path = "std::collections::VecDeque::reserve", reason = "use try_reserve and propagate allocation failure" },
+  { path = "std::collections::VecDeque::reserve_exact", reason = "use try_reserve_exact and propagate allocation failure" },
+  { path = "std::collections::BinaryHeap::with_capacity", reason = "validate the bound and use try_reserve" },
+  { path = "std::collections::BinaryHeap::reserve", reason = "use try_reserve and propagate allocation failure" },
+  { path = "std::collections::BinaryHeap::reserve_exact", reason = "use try_reserve_exact and propagate allocation failure" },
+  { path = "std::collections::HashMap::with_capacity", reason = "validate the bound and use try_reserve" },
+  { path = "std::collections::HashMap::reserve", reason = "use try_reserve and propagate allocation failure" },
+  { path = "std::collections::HashSet::with_capacity", reason = "validate the bound and use try_reserve" },
+  { path = "std::collections::HashSet::reserve", reason = "use try_reserve and propagate allocation failure" },
+]

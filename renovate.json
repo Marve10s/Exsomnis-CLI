@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "description": "Update the Effect 4 release candidates together so one exact version stays installed",
+      "matchManagers": ["bun"],
+      "matchPackageNames": ["effect", "@effect/platform-bun"],
+      "matchCurrentVersion": "/^4\\.0\\.0-rc\\.\\d+$/",
+      "allowedVersions": "/^4\\.0\\.0-rc\\.\\d+$/",
+      "groupName": "Effect 4 RC",
+      "groupSlug": "effect-4-rc",
+      "automerge": false
+    }
+  ],
+  "lockFileMaintenance": { "enabled": true }
+}

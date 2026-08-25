@@ -20,9 +20,9 @@ All commands run from the workspace root.
 
 - `bun install` installs dependencies and patches TypeScript 7 with the Effect language service.
 - `bun run build:native` builds the Rust core in release mode. Run it before `typecheck` on a fresh clone, since `crates/core/index.d.ts` comes from it.
-- `bun run check` runs `fmt:check`, `lint`, and `typecheck`.
+- `bun run check` runs `fmt:check`, `lint`, and `typecheck`. CI (`.github/workflows/ci.yml`) runs the same plus knip, clippy, cargo-deny, cargo-machete, `bun audit`, a generated-bindings drift check, and a compiled-binary smoke test on macOS 15 arm64.
 - `bun run knip` finds unused files and dependencies.
-- `cargo clippy --all-targets -- -D warnings` and `cargo fmt --all -- --check` cover the Rust side.
+- `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo deny check`, and `cargo machete` cover the Rust side.
 - `bun apps/exsomnis/src/bin.ts` runs the app from source.
 - `bun run compile` writes a single-file executable to `dist/exsomnis`. It needs Bun 1.4.0 or newer: Bun 1.3.12 emits a broken code signature on macOS arm64 and the kernel kills the binary on launch (oven-sh/bun issues 29120, 29270, 29361).
 
@@ -67,7 +67,7 @@ All commands run from the workspace root.
 - The process runs once, at `bin.ts`, through `BunRuntime.runMain`. No `runSync`, `runPromise`, or `runFork` anywhere else.
 - Prefer a module from `effect` or a package listed in `effect-stack.md` over a hand-written replacement. Before adding another Effect community package, confirm it peers on Effect 4 and record it in `effect-stack.md`.
 - Before using an `effect/unstable/*` module, read its current source in `node_modules`. Effect 3 documentation does not apply.
-- `@effect/language-service` diagnostics are all `error`. An exception needs an inline `// @effect-diagnostics <rule>:off` with a written reason.
+- All 95 `@effect/tsgo` diagnostics are `error` except `missingPipeableSignature` and `missedPipeableOpportunity`, which target Effect library authors. An exception needs an inline `// @effect-diagnostics <rule>:off -- <reason>`.
 - When `effect-stack.md` and the `effect-ts-practices` skill are silent, follow the reference codebase named in `prompt-context.md`, if that file exists.
 
 ## TypeScript and Bun
@@ -78,14 +78,18 @@ All commands run from the workspace root.
 - Use clear names, focused modules, explicit control flow, and useful types.
 - Do not write comments in code. Express intent through names, types, structure, and durable documentation outside the code.
 - Bun is the runtime, package manager, and script runner. Use `bun install`, `bun run`, `bunx`, and Bun APIs unless the project explicitly requires another tool.
-- Lint with type-aware oxlint plus the `prefer-effect`, `forbidden-unknown-cast`, and `require-disable-description` rules copied from the reference codebase. Format with oxfmt. Keep `@effect/language-service` enabled in `tsconfig.json` and `@effect/tsgo` installed through `prepare`.
+- Lint with type-aware oxlint. The custom rules in `packages/oxlint-plugins` enforce the Effect rules mechanically; `effect-stack.md` lists them. Format with oxfmt. Keep `@effect/language-service` enabled in `tsconfig.json` and `@effect/tsgo` installed through `prepare`.
+- Suppress an Effect diagnostic with `// @effect-diagnostics <name>:off -- <reason>` (no `effect/` prefix; the patched `tsc` ignores the prefixed form). Suppress an oxlint rule with `// oxlint-disable-next-line <rule> -- <reason>`. Both directives fail lint without a reason, and any other comment fails lint.
 
 ## Rust
 
-- Keep the crate small and its public API narrow. Everything the TypeScript side can call is listed in one module.
-- `unsafe` appears only at the N-API boundary and in code that a comment-free structure cannot make safe. Each `unsafe` block is as short as possible.
-- Run `cargo clippy` with warnings denied and `cargo fmt` before declaring a change complete.
-- Do not write comments in code, same rule as TypeScript.
+- Lint levels live in the root `Cargo.toml` under `[workspace.lints]`; the crate inherits them. Process-safety lints are `deny` (no `unwrap`, `expect`, `panic`, `todo`, indexing, `as` casts, unchecked arithmetic, wildcard matches, shadowing, ignored results), the `all`, `pedantic`, `nursery`, and `cargo` clippy groups are `warn`, and CI runs clippy with `-D warnings`, so every warning fails.
+- `unsafe_code` is denied crate-wide. Only `crates/core/src/napi_boundary.rs` allows it, with a reason, because napi-derive emits unsafe trampolines. The boundary module decodes N-API values, enforces size limits, converts numbers with `TryFrom`, calls safe domain code, and maps typed failures to `napi::Result`. Nothing else lives there.
+- Every exported function carries `#[napi(catch_unwind)]` and returns `napi::Result` for expected failures. Profiles keep `panic = "unwind"` so a panic becomes a JavaScript error instead of killing Bun.
+- `clippy.toml` bans assertion macros and infallible capacity APIs (`with_capacity`, `reserve`); use `try_reserve` after validating a bound. Every `#[allow]` needs a `reason`.
+- `deny.toml` (cargo-deny) is the dependency policy: allowed licenses, one version per crate (the `syn` exception is listed), crates.io only. `cargo machete` catches unused dependencies.
+- Run `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo deny check`, and `cargo machete` before declaring a change complete.
+- Do not write comments in code, same rule as TypeScript. Documentation lints are off for that reason.
 
 ## Terminal and provider behavior
 

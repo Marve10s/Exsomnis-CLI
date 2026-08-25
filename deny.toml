@@ -1,0 +1,38 @@
+[graph]
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]
+all-features = false
+
+[advisories]
+yanked = "deny"
+unmaintained = "all"
+unsound = "all"
+unused-ignored-advisory = "deny"
+ignore = []
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+highlight = "simplest-path"
+deny = []
+skip = [
+  { crate = "syn@2.0.119", reason = "napi-derive still depends on syn 2 while futures-macro uses syn 3" },
+]
+
+[bans.workspace-dependencies]
+duplicates = "deny"
+include-path-dependencies = true
+unused = "deny"
+
+[licenses]
+confidence-threshold = 0.93
+unused-allowed-license = "deny"
+allow = ["Apache-2.0", "MIT", "ISC", "Unicode-3.0"]
+exceptions = []
+private = { ignore = true }
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+required-git-spec = "rev"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+unused-allowed-source = "deny"

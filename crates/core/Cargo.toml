@@ -8,9 +8,12 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
+[lints]
+workspace = true
+
 [dependencies]
-napi = "3"
-napi-derive = "3"
+napi = { version = "3", default-features = false, features = ["napi4", "dyn-symbols"] }
+napi-derive = { version = "3", default-features = false, features = ["type-def", "strict"] }
 
 [build-dependencies]
 napi-build = "2"

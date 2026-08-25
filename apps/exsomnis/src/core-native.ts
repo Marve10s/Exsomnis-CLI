@@ -6,7 +6,7 @@ export class CoreNative extends Context.Service<
   {
     readonly version: string;
   }
->()('@exsomnis/app/CoreNative', {
+>()('exsomnis/core-native/CoreNative', {
   make: Effect.sync(() => ({ version: coreVersion() })),
 }) {
   static readonly layer = Layer.effect(this, this.make);

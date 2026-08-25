@@ -13,5 +13,6 @@ All commands run from the workspace root.
 - `cargo fmt --all` formats Rust.
 - `bun audit --audit-level=high` audits the Bun dependency tree; CI runs it on every push.
 - `bun run build:native:debug` builds the Rust core without optimizations for faster iteration.
+- `bun run generate:codex-protocol` runs the installed Codex CLI's `app-server generate-json-schema` and `generate-ts` into the gitignored `apps/exsomnis/codex-protocol/`. The output is the reference for the hand-written `Schema` decoders in the Codex adapter and is regenerated after a Codex upgrade; it needs `codex` on `PATH` and does not run in CI.
 
 Every command above was run on the development machine before it was written down. If a command changes, change this file in the same commit.

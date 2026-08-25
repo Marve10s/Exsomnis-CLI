@@ -1,5 +1,10 @@
 {
   "extends": "@exsomnis/config/tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./apps/exsomnis/src/*"]
+    }
+  },
   "include": ["apps/**/*.ts", "packages/**/*.ts", "crates/*/index.d.ts", "oxlint.config.ts"],
   "exclude": ["node_modules", "target", "dist"]
 }

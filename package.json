@@ -31,7 +31,8 @@
     "check": "bun run fmt:check && bun run lint && bun run typecheck",
     "build:native": "bun run --filter @exsomnis/core build",
     "build:native:debug": "bun run --filter @exsomnis/core build:debug",
-    "compile": "bun run --filter exsomnis compile"
+    "compile": "bun run --filter exsomnis compile",
+    "generate:codex-protocol": "codex app-server generate-json-schema --out apps/exsomnis/codex-protocol/schema --experimental && codex app-server generate-ts --out apps/exsomnis/codex-protocol/ts --experimental"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",

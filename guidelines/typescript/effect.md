@@ -28,7 +28,9 @@ Modules under `effect/unstable/*` may break in minor releases, which is another 
 | `effect/unstable/devtools` | same | `DevTools.layer()` behind a config flag during development |
 | `effect/unstable/observability` | same | OTLP export of traces and metrics during performance work |
 | `@effect/platform-bun` | 4.0.0-rc.112 | `BunServices` layer: file system, path, stdio, terminal, child process spawner. `BunRuntime.runMain` |
-| `@effect/sql-sqlite-bun` | 4.0.0-rc.112 | SQLite driver over `bun:sqlite` |
+| `@effect/sql-sqlite-bun` | 4.0.0-rc.112 | SQLite driver over `bun:sqlite`. Added with the persistence layer |
+| `@anthropic-ai/claude-agent-sdk` | 0.3.245 | Claude Code adapter. Pinned to the installed Claude Code minor version and pointed at the user's `claude` binary; its peers (zod, the Anthropic and MCP SDKs) are never imported by Exsomnis code. Added with the adapter |
+| `@tanstack/hotkeys` | 0.8.0 | Hotkey parsing, matching, leader sequences, and display labels. Only its pure functions are used; `HotkeyManager` needs a DOM. Added with the input layer |
 | `@effect/language-service` | 0.87.2 | TypeScript plugin with Effect diagnostics. Every diagnostic set to `error` |
 | `@effect/tsgo` | 0.37.0 | Same diagnostics under TypeScript 7. Installed through `"prepare": "effect-tsgo patch"` |
 | `oxlint`, `oxfmt`, `oxlint-tsgolint` | 1.80.0, 0.65.0, 7.0.2001 | Lint and formatting, configured as in the reference codebase. TypeScript is 7.0.2 |
@@ -53,7 +55,7 @@ Atom lives in the core package in Effect 4. `effect/unstable/reactivity` holds `
 
 The core module has no React or DOM dependency. Its only browser references are inside `windowFocusSignal`, `refreshOnWindowFocus`, and `searchParam`, which Exsomnis never calls.
 
-Exsomnis uses the core module without a binding. One application-owned registry is created with `AtomRegistry.make` and provided through `AtomRegistry.layer`. State is declared at module scope with `Atom.make`, per-task and per-screen state with `Atom.family`, actions with `Atom.fn`, and atoms derived from services with `Atom.runtime`. Widgets subscribe through the registry, and `Atom.toStream` feeds the render loop. A footgun carried over from the reference codebase: `registry.set(atom, fn)` stores the function as the value instead of applying it.
+Exsomnis uses the core module without a binding. One application-owned registry is provided through `AtomRegistry.layer` in `bin.ts`. State is declared at module scope in `apps/exsomnis/src/state/atoms.ts` with `Atom.make`, per-thread and per-provider state with `Atom.family`, actions with `Atom.fn`, and atoms derived from services with `Atom.runtime`. The orchestrator writes atoms; widgets and the input router only read them. Widgets subscribe through the registry, and `Atom.toStream` feeds the render loop. A footgun carried over from the reference codebase: `registry.set(atom, fn)` stores the function as the value instead of applying it.
 
 ## Other Effect sub-packages
 
@@ -121,9 +123,11 @@ One `TracerLive(serviceName)` layer owns OTLP export and returns `Layer.empty` w
 
 ## How Effect meets the Rust core
 
-The Rust core is a native library loaded through N-API. On the TypeScript side it is one `Context.Service`, `TerminalHost`, whose layer loads the library once and releases it on scope close. Synchronous native calls are wrapped in `Effect.sync` or `Effect.try` with a tagged error. Damage notifications and PTY exits arrive through `Stream.callback` or a `Queue` fed by the native callback.
+The Rust core is a native library loaded through N-API. On the TypeScript side it is one `Context.Service`, `CoreNative`, whose layer loads the library once and releases it on scope close. Synchronous native calls are wrapped in `Effect.sync` or `Effect.try` with a tagged error. Later, damage notifications and PTY exits arrive through `Stream.callback` or a `Queue` fed by the native callback.
 
-Effect's `ChildProcess` module has no pseudo-terminal option. Agent, Shell, and Tests screens spawn through `Bun.Terminal`, wrapped as a scoped Effect resource so the process is killed when the screen's scope closes. Git and other non-interactive commands use `ChildProcess` from `effect/unstable/process`.
+The host terminal is read and configured through the `process` globals, never through Effect's `Terminal` service, whose readline-based input path does not understand mouse or kitty sequences. The logger layer routes to stderr because Rust writes frames to stdout.
+
+Codex runs through `ChildProcess` from `effect/unstable/process` with stdio pipes; Claude Code runs through the Agent SDK's `query`, wrapped in exactly one `Effect.tryPromise` adapter per SDK call. Effect's `ChildProcess` module has no pseudo-terminal option, so the later Shell and Tests screens spawn through `Bun.Terminal`, wrapped as a scoped Effect resource so the process is killed when the screen's scope closes. Git and other non-interactive commands use `ChildProcess`.
 
 ## Rules
 
@@ -134,7 +138,8 @@ Effect's `ChildProcess` module has no pseudo-terminal option. Agent, Shell, and 
 - No Zod or other validation library. `Schema` declares every type and decodes every boundary except the per-frame N-API path.
 - Interface state lives in `Atom`. Nothing mirrors it in plain variables.
 - Before adding an Effect community package, confirm it peers on Effect 4 and was published in the last six months. Record it in this file.
-- Service keys follow the `deterministicKeys` diagnostic: `exsomnis/<file-name>/<ClassName>`, for example `exsomnis/core-native/CoreNative`.
+- Service keys follow the `deterministicKeys` diagnostic: `exsomnis/<path under src without .ts>/<ClassName>`, for example `exsomnis/core-native/CoreNative` and `exsomnis/providers/registry/ProviderRegistry`.
+- Tagged errors are constructed with `.make(...)`, and finite numbers are declared with `Schema.Finite`; the `newSchemaClass` and `schemaNumber` diagnostics enforce both. Unions of structs that carry a `_tag` use `Schema.TaggedStruct`.
 - All TypeScript application code is written with Effect 4, pinned to the exact release candidate in `package.json` and forced to one copy through `overrides`. Bumps are deliberate commits.
 - Every meaningful operation is a named `Effect.fn('Service.method')`; I/O edges carry `Effect.withSpan`. Log configuration lives on the runtime layer.
 - The process runs once, at `bin.ts`, through `BunRuntime.runMain`. No `runSync`, `runPromise`, or `runFork` anywhere else.

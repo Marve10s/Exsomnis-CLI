@@ -1,0 +1,34 @@
+import { Option } from 'effect';
+import { Atom } from 'effect/unstable/reactivity';
+import type { ProviderId, ThreadId } from '@/domain/ids.ts';
+import type { ModelInfo } from '@/domain/provider.ts';
+import type {
+  ActiveView,
+  Attention,
+  FocusRegion,
+  PendingRequest,
+  Project,
+  Thread,
+  TimelineItem,
+  Turn,
+} from '@/domain/thread.ts';
+
+export const projectsAtom = Atom.make<ReadonlyArray<Project>>([]);
+export const threadsAtom = Atom.make<ReadonlyArray<Thread>>([]);
+export const selectedThreadIdAtom = Atom.make<Option.Option<ThreadId>>(Option.none());
+export const activeViewAtom = Atom.make<ActiveView>('chat');
+export const focusAtom = Atom.make<FocusRegion>('chat');
+export const sidebarVisibleAtom = Atom.make(true);
+export const defaultProviderAtom = Atom.make<ProviderId>('codex');
+
+export const timelineAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make<ReadonlyArray<TimelineItem>>([]),
+);
+export const turnsAtom = Atom.family((_threadId: ThreadId) => Atom.make<ReadonlyArray<Turn>>([]));
+export const pendingRequestAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make<Option.Option<PendingRequest>>(Option.none()),
+);
+export const attentionAtom = Atom.family((_threadId: ThreadId) => Atom.make<Attention>('none'));
+export const modelsAtom = Atom.family((_provider: ProviderId) =>
+  Atom.make<ReadonlyArray<ModelInfo>>([]),
+);

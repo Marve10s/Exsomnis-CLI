@@ -16,19 +16,21 @@ Performance is a product goal, not a nice-to-have. The interface must stay respo
 
 The interface has three regions.
 
-The optional sidebar on the left changes tasks. A task is a piece of work and its repository or worktree. The sidebar shows each task's active provider, branch, unread activity, and whether a process needs attention.
+The optional sidebar on the left lists projects and their threads. A project is a repository the user has opened Exsomnis in. A thread is one conversation with one provider, in its own Git worktree of that repository. The sidebar shows each thread's provider, branch, and whether it needs attention.
 
 The center holds the current work. It does not split between several tools. The selected screen gets all the available space.
 
-The navigator on the right changes screens within the current task. The screen types are Agent, Diff, Files, Shell, Tests, and Activity.
+The navigator on the right changes screens within the current thread. The first release has two screens, Agent (labelled "chat" on screen) and Diff. Files, Shell, Tests, and Activity come after it.
 
 Exsomnis draws these regions and screens itself. It does not depend on native terminal tabs or an external multiplexer such as cmux, tmux, or Zellij.
 
-## Tasks and screens
+## Projects, threads, and screens
 
-A task owns the context its screens share: the repository, worktree, base branch, linked pull request, provider sessions, and local review state.
+A thread owns the context its screens share: the worktree, its branch and base commit, the provider session and its resume reference, the transcript, and local review state. Creating a thread creates the worktree on a temporary branch named `exsomnis/<short id>`; the thread starts before any nicer name exists. Deleting a thread and removing its worktree are separate actions, and removal states whether tracked or untracked changes would be lost before it asks.
 
-Agent screens run an installed agent CLI in a managed pseudo-terminal. The first providers are Codex CLI and Claude Code. Gemini CLI, OpenCode, and any other CLI the user configures come after. More than one provider can work in the same task. Changing providers does not move conversation history between them. The shared context is the filesystem, Git state, task metadata, and an optional handoff summary.
+Agent screens for the first providers, Codex CLI and Claude Code, talk to the installed CLI over its structured protocol: `codex app-server` over JSON-RPC on stdio, and the Claude Agent SDK pointed at the `claude` binary on the user's PATH. Exsomnis renders the transcript and the composer itself. Typing `/` shows three Exsomnis commands (`/model`, `/provider`, `/approvals`) followed by the provider's own commands as the protocol reports them, and only the ones the protocol can run. Approval prompts render inline and are answered with the provider's own decision values. The CLI keeps its login, settings, hooks, MCP servers, and permission rules. Gemini CLI, OpenCode, and CLIs without a protocol run in a managed pseudo-terminal, which comes after the first release.
+
+A thread has one provider in the first release. Changing the provider for new threads does not move conversation history. The shared context between threads is the filesystem, Git state, and project metadata.
 
 Diff is a first-class screen. It shows working changes, branch changes since the merge-base, or the comparison for a linked pull request. The screen labels which comparison is selected so the user always knows what is under review.
 
@@ -44,13 +46,13 @@ Every action has two paths, mouse and keyboard, and both are always available.
 
 Mouse covers clicking tasks in the sidebar, screens in the navigator, files and hunks in Diff and Files, and the wheel in every scrollable region. Clickable elements show their hotkey next to them so mouse users learn the keyboard path.
 
-Keyboard commands sit behind one configurable leader key. A key sequence after the leader changes tasks, screens, or application state. Any input that is not an application command goes to the active child process unchanged.
+Keyboard commands sit behind one configurable leader key, `Ctrl+G` by default. A key sequence after the leader changes threads, screens, or application state. Any input that is not an application command goes to the composer or the active child process unchanged.
 
 Inside an Agent, Shell, or Tests screen the child process owns the mouse when it has asked for mouse reporting. Exsomnis forwards mouse events to it. When the child has not asked, the wheel scrolls that screen's scrollback and a click gives the screen focus.
 
 This boundary matters because coding agents, shells, editors, and test runners have their own shortcuts. The design minimizes interference with them.
 
-The left sidebar can collapse when the current task needs more room. The right navigator stays visible because screen switching is part of the main workflow.
+The left sidebar can collapse when the current thread needs more room. The right navigator stays visible because screen switching is part of the main workflow.
 
 ## Product boundaries
 
@@ -62,7 +64,7 @@ Exsomnis is not a replacement for GitHub. It makes local review available during
 
 ## Open questions
 
-The default leader key needs to work across common terminals without colliding with agent and editor shortcuts.
+The default leader key, `Ctrl+G`, must be confirmed in Terminal.app, Ghostty, and iTerm2 before the first release; the fallback is another control key that no wrapped CLI binds.
 
 Local review notes may stay private, feed a provider handoff, or become a GitHub-ready review summary.
 

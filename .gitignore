@@ -28,3 +28,6 @@ target/
 
 # Local tool state
 .commandcode/
+
+# Generated from the installed Codex CLI by bun run generate:codex-protocol
+apps/exsomnis/codex-protocol/

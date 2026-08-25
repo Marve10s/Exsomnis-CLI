@@ -4,14 +4,14 @@ This is the canonical instruction file for coding agents working on Exsomnis CLI
 
 ## Project status
 
-The workspace is scaffolded, the strict lint and CI policy is in place, and every check passes. The application is a hello world: an Effect 4 `Command.run` entrypoint that loads the Rust core through N-API and logs its version. The next step is the rendering spike described in `guidelines/architecture/stack.md`.
+The workspace is scaffolded, the strict lint and CI policy is in place, and every check passes. The first release is being built in milestones: the domain schemas, provider contract, and state atoms are in place, and the Codex and Claude Code services register but report themselves unavailable until their adapters land. `guidelines/product/context.md` describes the interface, `guidelines/architecture/stack.md` the rendering core and the measurements it must pass.
 
 ## Guidelines
 
 | Work | Read |
 |---|---|
 | Product, interface, or screen decisions | `guidelines/product/context.md` |
-| Anything touching the wrapped CLIs, PTYs, input, or Git | `guidelines/product/terminal-behavior.md` |
+| Anything touching the wrapped CLIs, their protocols, PTYs, input, or Git | `guidelines/product/terminal-behavior.md` |
 | Architecture, the Rust and TypeScript split, release shape, open technical questions | `guidelines/architecture/stack.md` |
 | Finding where something lives, generated versus authored files | `guidelines/architecture/layout.md` |
 | Any TypeScript | `guidelines/typescript/code-style.md` and `guidelines/typescript/effect.md` |
@@ -42,7 +42,7 @@ The workspace is scaffolded, the strict lint and CI policy is in place, and ever
 ## Language boundary
 
 - Rust owns terminal emulation, compositing, frame output, syntax highlighting, and diff parsing.
-- TypeScript owns everything else: tasks, screens, layout, input routing, providers, Git, persistence, and widgets.
+- TypeScript owns everything else: projects, threads, screens, layout, host terminal setup, input decoding and routing, provider clients, Git, persistence, and widgets.
 - Do not move logic across the boundary to fix a performance problem until a profile shows the boundary is the problem.
 - Large buffers never cross the boundary per frame. Rust owns cell grids; TypeScript receives damage notifications.
 

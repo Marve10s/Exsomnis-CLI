@@ -174,9 +174,14 @@ export class ThreadService extends Context.Service<
         }
         const turn = active.value;
         switch (event['_tag']) {
-          case 'TurnStarted':
+          case 'TurnStarted': {
             yield* threads.markRunning(turn.id, event.turn.id);
+            const session = sessions.get(threadId);
+            if (session !== undefined) {
+              yield* threads.updateResumeRef(threadId, session.resumeRef);
+            }
             break;
+          }
           case 'TurnCompleted': {
             yield* threads.markFinalizing(turn.id);
             yield* threads.staleRequests(turn.id);
@@ -249,15 +254,36 @@ export class ThreadService extends Context.Service<
               return existing;
             }
             const driver = yield* providers.get(thread.provider);
-            const session = yield* driver
-              .openSession({
-                cwd: thread.worktreePath,
-                model: thread.model,
-                approval: thread.approval,
-                resume: thread.resumeRef,
-              })
-              .pipe(Scope.provide(serviceScope));
-            yield* threads.updateResumeRef(thread.id, session.resumeRef);
+            const open = (resume: Thread['resumeRef']) =>
+              driver
+                .openSession({
+                  cwd: thread.worktreePath,
+                  model: thread.model,
+                  approval: thread.approval,
+                  resume,
+                })
+                .pipe(Scope.provide(serviceScope));
+            const session = yield* open(thread.resumeRef).pipe(
+              Effect.catchTag('ProviderError', (error) =>
+                Option.isNone(thread.resumeRef)
+                  ? Effect.fail(error)
+                  : Effect.gen(function* () {
+                      yield* Effect.logWarning('Provider conversation could not be resumed').pipe(
+                        Effect.annotateLogs({ threadId: thread.id, message: error.message }),
+                      );
+                      yield* threads.clearResumeRef(thread.id);
+                      const active = yield* threads.activeTurn(thread.id);
+                      if (Option.isSome(active)) {
+                        yield* threads.addNotice(
+                          thread.id,
+                          active.value.id,
+                          `The previous provider conversation could not be resumed (${error.message}). A new one starts here.`,
+                        );
+                      }
+                      return yield* open(Option.none());
+                    }),
+              ),
+            );
             yield* Effect.sync(() => sessions.set(thread.id, session));
             const consume: Effect.Effect<void, ThreadServiceError> = Stream.runForEach(
               session.events,

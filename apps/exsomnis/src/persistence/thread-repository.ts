@@ -111,6 +111,7 @@ export class ThreadRepository extends Context.Service<
     readonly list: Effect.Effect<ReadonlyArray<Thread>, PersistenceError>;
     readonly markViewed: (threadId: ThreadId) => Effect.Effect<Thread, PersistenceError>;
     readonly delete: (threadId: ThreadId) => Effect.Effect<void, PersistenceError>;
+    readonly clearResumeRef: (threadId: ThreadId) => Effect.Effect<void, PersistenceError>;
     readonly updateResumeRef: (
       threadId: ThreadId,
       resumeRef: ResumeRefType,
@@ -256,6 +257,16 @@ export class ThreadRepository extends Context.Service<
       yield* sql`DELETE FROM threads WHERE id = ${threadId}`.pipe(
         Effect.mapError(persistenceFailure('ThreadRepository.delete')),
       );
+    });
+
+    const clearResumeRef = Effect.fn('ThreadRepository.clearResumeRef')(function* (
+      threadId: ThreadId,
+    ) {
+      const now = yield* Clock.currentTimeMillis;
+      yield* sql`
+        UPDATE threads SET resume_ref_json = ${null}, updated_at = ${now}
+        WHERE id = ${threadId}
+      `.pipe(Effect.mapError(persistenceFailure('ThreadRepository.clearResumeRef')));
     });
 
     const updateResumeRef = Effect.fn('ThreadRepository.updateResumeRef')(function* (
@@ -799,6 +810,7 @@ export class ThreadRepository extends Context.Service<
       list,
       markViewed,
       delete: deleteThread,
+      clearResumeRef,
       updateResumeRef,
       updateModel,
       updateApproval,

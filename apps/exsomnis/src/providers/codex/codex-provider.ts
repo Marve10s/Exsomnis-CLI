@@ -435,7 +435,10 @@ const makeSession = Effect.fn('CodexProvider.makeSession')(function* (
 
   const emitNotice = Effect.fn('CodexProvider.emitNotice')(function* (text: string) {
     const id = yield* Ref.getAndUpdate(nextNoticeId, (value) => value + 1);
+    const turn = { id: `codex-command-${String(id)}` };
+    yield* emit({ _tag: 'TurnStarted', turn });
     yield* emit(noticeEvent(`codex-command-${String(id)}`, text));
+    yield* emit({ _tag: 'TurnCompleted', turn, outcome: 'completed' });
   });
 
   const finishApprovals = Effect.fn('CodexProvider.finishApprovals')(function* () {

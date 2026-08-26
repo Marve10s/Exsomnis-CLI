@@ -75,7 +75,13 @@ const commandEntries = (context: PaletteContext): ReadonlyArray<PaletteEntry> =>
   const all = [...own, ...native];
   return query.length === 0
     ? all
-    : all.filter((entry) => entry.label.slice(1).toLowerCase().includes(query));
+    : all
+        .filter((entry) => entry.label.slice(1).toLowerCase().includes(query))
+        .toSorted(
+          (left, right) =>
+            Number(right.label.slice(1).toLowerCase().startsWith(query)) -
+            Number(left.label.slice(1).toLowerCase().startsWith(query)),
+        );
 };
 
 export const paletteEntries = (

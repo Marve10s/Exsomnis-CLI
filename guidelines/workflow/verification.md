@@ -12,3 +12,5 @@
 ## Pending human verification for the first release
 
 These were exercised through a pseudo-terminal harness and still need a run in a real terminal (Terminal.app, Ghostty, iTerm2): the kitty keyboard handshake and the legacy fallback, `Shift+Enter` for a newline, the `Ctrl+G` leader not colliding with a terminal binding, `SIGWINCH` delivery on a real resize, true colour output, and `exsomnis render-demo --calibrate` to settle which width table wins. Declining and cancelling an approval, the unseen-failure badge, binary files and renames in the diff view, and a repository with no commit were not driven either.
+
+Observed while verifying: with the `default` permission mode, Claude Code sometimes writes a file the prompt does not locate ("create a file named hello.txt") into the home directory instead of the session's working directory, while `pwd` in the same session prints the worktree. The session cwd is correct; the choice is the model's. Prompts that name the location, or the `acceptEdits` mode, placed the file in the worktree in every run.

@@ -12,6 +12,8 @@ Quality groups are `warn`: rustc's `future_incompatible` and `rust_2024_compatib
 
 Allowed back, with reasons in `Cargo.toml`: `cargo_common_metadata` (private crate), `manual_assert` (assertions are banned, so clippy must not suggest one), `missing_errors_doc`, `missing_panics_doc`, `missing_safety_doc` (the project forbids comments; error behavior belongs in types), and `multiple_crate_versions` (cargo-deny owns the dependency graph, with the `syn` exception recorded there). `undocumented_unsafe_blocks` is not enabled because it requires comments; one unsafe module, one operation per block, and `unsafe_op_in_unsafe_fn` compensate.
 
+Three more allows carry reasons in the source. `clippy::redundant_pub_crate` is allowed at the crate root because it contradicts rustc's `unreachable_pub`: every item shared between the private modules must be `pub(crate)` to satisfy one lint and plain `pub` to satisfy the other, and `pub(crate)` is the safer half of the pair. `clippy::unnecessary_wraps` is allowed on `Screen::shutdown` because the policy below requires every export to return `napi::Result` even when it cannot fail. `clippy::needless_pass_by_value` is allowed on `cell_width` because napi-derive rejects `&str`: a JavaScript string is a primitive and must arrive owned.
+
 Four rustc lints the research recommended are nightly-only and are not set: `unqualified_local_imports`, `must_not_suspend`, `lossy_provenance_casts`, `fuzzy_provenance_casts`.
 
 ## clippy.toml
@@ -26,6 +28,14 @@ Four rustc lints the research recommended are nightly-only and are not set: `unq
 `unsafe_code` is denied crate-wide. `crates/core/src/napi_boundary.rs` is the only module that allows it, with the reason that napi-derive emits unsafe Node-API callback trampolines. The boundary module does only these jobs: decode and validate N-API values, enforce size limits, convert numbers through `TryFrom`, call safe domain functions, map typed failures to `napi::Result`, and convert output to N-API values. Terminal emulation, parsing, compositing, and state live in sibling modules that inherit the deny.
 
 napi-derive's expansion includes `#[allow(clippy::all)]` and `#[allow(non_snake_case)]` without reasons and an unsafe block per export. Clippy suppresses findings inside external macro expansions, so the crate compiles clean under the policy above; if a future napi-derive release changes that, scope the exception to the individual `#[napi]` item, never to the crate.
+
+## The compositor
+
+`crates/core/src/napi_boundary.rs` exports one class. `new Screen(cols, rows)` allocates the front and back grids, `resize` reallocates them and forces a full repaint, `setCapabilities` takes a bitmask for true colour, indexed colour, and synchronized output, `present` takes the whole frame and returns the bytes written, `takeStats` drains the 240-frame ring, `invalidate` forces the next frame to repaint everything, and `shutdown` makes every later call fail. Two free functions sit beside it: `coreVersion` and `cellWidth`, the second so TypeScript can compare its width table against the crate's.
+
+`present(ops, opCount, text, textLen)` borrows an `Int32ArraySlice` and a `Uint8ArraySlice` for the duration of the call. Operations are fixed eight-word records, so the writer never branches on record size: `[opcode, x, y, a, b, foreground, background, attributes]`. The opcodes are fill rect, text run, cursor, clip push, and clip pop; a text run puts a byte offset and length into `a` and `b`. Colours pack a tag in the high byte, `0x01RRGGBB` for true colour, `0x020000NN` for a 256 index, and `0x0000000N` for default and the sixteen named colours. Both lengths arrive as separate arguments and are validated against a named maximum and against the slice length before anything is read.
+
+The domain modules beside the boundary are `grid` (cells, styles, dirty spans), `text` (grapheme segmentation and the cluster interner), `color` (decoding and downgrading), `ops` (record decoding and clip rectangles), `writer` (cursor moves, SGR, cell bytes), `screen` (the compositor), `stats` (the ring buffers), and `error`. Every one of them is a private module whose shared items are `pub(crate)`.
 
 ## Panics
 
@@ -44,6 +54,7 @@ Every exported function carries `#[napi(catch_unwind)]` and returns `napi::Resul
 ## Dependencies and tools
 
 - `deny.toml` is the dependency policy: allowed licenses (Apache-2.0, MIT, ISC, Unicode-3.0), one version per crate with the `syn` 2 and 3 duplication recorded as an explicit skip, crates.io as the only source, yanked and unmaintained crates denied. Run `cargo deny check`.
+- The compositor added `unicode-segmentation` 1.13.3 and `unicode-width` 0.2.2. Both are `MIT OR Apache-2.0`, both have no runtime dependencies, and `unicode-width` declares `#![forbid(unsafe_code)]`. They are the whole crate budget for grapheme segmentation and column width; `crossterm` and `termwiz` were rejected for their dependency graphs and because they want to own terminal setup, which TypeScript owns here.
 - `cargo machete` catches unused dependencies. `napi` is listed under `[package.metadata.cargo-machete] ignored` because the source only names `napi_derive` and every `napi::` path is inside the macro expansion.
 - Not used, and why: `cargo-udeps` needs nightly; `cargo-semver-checks` targets published Rust APIs and this crate's consumer is generated TypeScript; `cargo-nextest` has nothing to run because the project keeps no automated test suite; `cargo-audit` duplicates cargo-deny's advisory check and is not in CI.
 - `rust-toolchain.toml` pins 1.93.1 with clippy and rustfmt for rustup users and for `dtolnay/rust-toolchain` in CI. The local toolchain comes from Homebrew, which does not read that file, so the pin is a CI guarantee and a local convention. `rust-version = "1.93"` in the crate is the build floor, not a downstream support promise.

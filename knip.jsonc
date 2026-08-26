@@ -10,6 +10,8 @@
         "src/domain/*.ts",
         "src/providers/provider.ts",
         "src/state/atoms.ts",
+        "src/render/*.ts",
+        "src/terminal/*.ts",
       ],
     },
     "packages/config": {},

@@ -700,4 +700,6 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
+module.exports.Screen = nativeBinding.Screen
+module.exports.cellWidth = nativeBinding.cellWidth
 module.exports.coreVersion = nativeBinding.coreVersion

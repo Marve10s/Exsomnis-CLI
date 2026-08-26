@@ -10,6 +10,7 @@
   "dependencies": {
     "@effect/platform-bun": "catalog:",
     "@exsomnis/core": "workspace:*",
+    "@tanstack/hotkeys": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

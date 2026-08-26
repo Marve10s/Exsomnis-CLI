@@ -146,6 +146,7 @@ export class ThreadService extends Context.Service<
         return;
       }
       yield* threads.markFinalizing(active.value.id);
+      yield* threads.staleRequests(active.value.id);
       const promoted = yield* threads.finishAndPromote(active.value.id, 'failed', reason);
       yield* syncThread(threadId);
       if (Option.isSome(promoted)) {
@@ -177,6 +178,7 @@ export class ThreadService extends Context.Service<
             break;
           case 'TurnCompleted': {
             yield* threads.markFinalizing(turn.id);
+            yield* threads.staleRequests(turn.id);
             yield* syncThread(threadId);
             const promoted = yield* threads.finishAndPromote(turn.id, event.outcome, event.reason);
             yield* syncThread(threadId);
@@ -330,12 +332,23 @@ export class ThreadService extends Context.Service<
       requestId: RequestId,
       decision: ApprovalDecisionType,
     ) {
-      const thread = yield* threads.get(threadId);
-      const session = yield* ensureSession(thread);
-      yield* session.respond(requestId, decision);
-      yield* threads.answerApproval(requestId, decision);
-      if (decision === 'cancel') {
-        yield* session.interrupt;
+      const session = sessions.get(threadId);
+      if (session === undefined) {
+        yield* threads.staleRequest(requestId);
+        yield* syncThread(threadId);
+        return;
+      }
+      const accepted = yield* session.respond(requestId, decision).pipe(
+        Effect.as(true),
+        Effect.catchTag('ProviderError', () => Effect.succeed(false)),
+      );
+      if (accepted) {
+        yield* threads.answerApproval(requestId, decision);
+        if (decision === 'cancel') {
+          yield* session.interrupt;
+        }
+      } else {
+        yield* threads.staleRequest(requestId);
       }
       yield* syncThread(threadId);
     });

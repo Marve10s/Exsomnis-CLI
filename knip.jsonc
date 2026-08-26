@@ -20,6 +20,8 @@
         "src/persistence/thread-repository.ts",
         "src/orchestration/model-service.ts",
         "src/orchestration/thread-service.ts",
+        "src/render/*.ts",
+        "src/terminal/*.ts",
       ],
     },
     "packages/config": {},

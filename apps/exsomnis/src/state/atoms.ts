@@ -2,6 +2,8 @@ import { Option } from 'effect';
 import { Atom } from 'effect/unstable/reactivity';
 import type { ProviderId, ThreadId } from '@/domain/ids.ts';
 import type { ModelInfo, TokenUsage } from '@/domain/provider.ts';
+import type { Region } from '@/render/layout.ts';
+import type { TerminalSize } from '@/terminal/host-terminal.ts';
 import type {
   ActiveView,
   Attention,
@@ -20,6 +22,8 @@ export const activeViewAtom = Atom.make<ActiveView>('chat');
 export const focusAtom = Atom.make<FocusRegion>('chat');
 export const sidebarVisibleAtom = Atom.make(true);
 export const defaultProviderAtom = Atom.make<ProviderId>('codex');
+export const terminalSizeAtom = Atom.make<TerminalSize>({ columns: 80, rows: 24 });
+export const regionsAtom = Atom.make<ReadonlyArray<Region>>([]);
 
 export const timelineAtom = Atom.family((_threadId: ThreadId) =>
   Atom.make<ReadonlyArray<TimelineItem>>([]),
@@ -35,4 +39,6 @@ export const modelsAtom = Atom.family((_provider: ProviderId) =>
 export const tokenUsageAtom = Atom.family((_threadId: ThreadId) =>
   Atom.make<Option.Option<TokenUsage>>(Option.none()),
 );
-export const workingTreeVersionAtom = Atom.family((_threadId: ThreadId) => Atom.make(0));
+export const workingTreeVersionAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make(0).pipe(Atom.keepAlive),
+);

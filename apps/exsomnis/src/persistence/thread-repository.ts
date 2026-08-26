@@ -178,6 +178,8 @@ export class ThreadRepository extends Context.Service<
       turnId: TurnId,
       request: ApprovalRequestType,
     ) => Effect.Effect<PendingRequest, PersistenceError>;
+    readonly staleRequests: (turnId: TurnId) => Effect.Effect<void, PersistenceError>;
+    readonly staleRequest: (requestId: RequestId) => Effect.Effect<void, PersistenceError>;
     readonly answerApproval: (
       requestId: RequestId,
       decision: ApprovalDecisionType,
@@ -672,6 +674,24 @@ export class ThreadRepository extends Context.Service<
         .pipe(Effect.catchTag('SqlError', persistenceFailure('ThreadRepository.addApproval')));
     });
 
+    const staleRequests = Effect.fn('ThreadRepository.staleRequests')(function* (turnId: TurnId) {
+      yield* sql`
+        UPDATE pending_requests
+        SET status = 'stale', resumable = ${false}
+        WHERE turn_id = ${turnId} AND status = 'pending'
+      `.pipe(Effect.mapError(persistenceFailure('ThreadRepository.staleRequests')));
+    });
+
+    const staleRequest = Effect.fn('ThreadRepository.staleRequest')(function* (
+      requestId: RequestId,
+    ) {
+      yield* sql`
+        UPDATE pending_requests
+        SET status = 'stale', resumable = ${false}
+        WHERE id = ${requestId} AND status = 'pending'
+      `.pipe(Effect.mapError(persistenceFailure('ThreadRepository.staleRequest')));
+    });
+
     const answerApproval = Effect.fn('ThreadRepository.answerApproval')(function* (
       requestId: RequestId,
       decision: ApprovalDecisionType,
@@ -766,7 +786,7 @@ export class ThreadRepository extends Context.Service<
       if (latest.finishedAt.value <= thread.lastViewedAt) {
         return 'none' as const;
       }
-      return latest.state === 'failed' || latest.state === 'interrupted'
+      return latest.state === 'failed'
         ? ('failed' as const)
         : latest.state === 'completed'
           ? ('completed' as const)
@@ -797,6 +817,8 @@ export class ThreadRepository extends Context.Service<
       appendItemDelta,
       completeItem,
       addApproval,
+      staleRequests,
+      staleRequest,
       answerApproval,
       addNotice,
       reconcileStartup,

@@ -36,7 +36,34 @@ TypeScript calls Rust through N-API using napi-rs, which Bun supports and which 
 
 On the TypeScript side the native library is one Effect service. Its layer loads the library once and releases it when the application scope closes. Native callbacks feed a `Stream`, so damage notifications and process exits look like every other event in the application.
 
-This split is not decided in a document. The rendering milestone measures it: three synthetic threads streaming a token every 8 milliseconds into a TypeScript-described three-column screen, composited by the Rust `Screen`, presented at the terminal's refresh rate, with the binary produced by `bun build --compile`. The numbers that gate it: frame build, diff, and emit time under 2 milliseconds against a 16.7 millisecond budget, input-to-write latency under 5 milliseconds, and fewer than 20 bytes written per changed cell. Rust keeps a 240-frame ring buffer of those timings behind `takeStats()`; nothing is logged per frame. The measured values are recorded here when the milestone lands.
+This split is not decided in a document. The rendering milestone measured it: three synthetic threads streaming a token every 8 milliseconds into a TypeScript-described three-column screen, composited by the Rust `Screen`, presented through `bun apps/exsomnis/src/bin.ts render-demo` and through the `bun build --compile` binary. The numbers that gate it: frame build, diff, and emit time under 2 milliseconds against a 16.7 millisecond budget, input-to-write latency under 5 milliseconds, and fewer than 20 bytes written per changed cell. Rust keeps a 240-frame ring buffer of those timings behind `takeStats()`; nothing is logged per frame.
+
+## Measured on the development machine
+
+All numbers come from `exsomnis render-demo` on a 10-core Apple Silicon Mac under Bun 1.4.0, driven through a pseudo-terminal because no GUI terminal is reachable from the automation. Timings are microseconds over the last 240 frames; byte counts are cumulative over the run.
+
+| Measurement | Budget | Frames written to a file, 80x24 | Frames read by a `Bun.Terminal` reader, 120x40 |
+|---|---|---|---|
+| Frame build in TypeScript | | 97 mean, 138 p95 | 72 mean, 118 p95 |
+| Draw into the back grid | | 189 mean, 234 p95 | 517 mean, 718 p95 |
+| Diff and byte generation | | 25 mean, 34 p95 | 45 mean, 61 p95 |
+| Write to stdout | | 59 mean, 78 p95 | 29 mean, 40 p95 |
+| Whole frame | under 2000 | 369 mean, 484 p95 | 663 mean, 937 p95 |
+| Input to write returning | under 5000 | 1298 mean, 3626 p95 | 2708 mean, 7560 p95 |
+| Bytes per frame | | 61 mean, 71 max | 78 mean, 199 max |
+| Bytes per changed cell | under 20 | 14.01 | 1.77 |
+
+The frame rate settles at 55 frames per second while three streams append a token every 8 milliseconds, so the loop reaches its 16 millisecond coalescing floor rather than its poll rate.
+
+Input-to-write is stamped when the stdin `data` callback fires and again when `present` returns, so it covers everything the process controls and nothing the terminal does. The second column's tail is the harness, not the application: the reader is a second Bun process competing for the same cores, and the same build measured between 1.4 and 3.6 milliseconds at the 95th percentile across runs when frames went to a file instead. The 256-colour fallback run, where the terminal answers no capability query, writes 1.56 bytes per changed cell because its colour sequences are shorter than true colour. The compiled binary matches the from-source numbers.
+
+Three deviations from the original design are worth recording.
+
+The render loop polls every millisecond instead of sleeping a whole frame. It renders when state is dirty and at least 16 milliseconds have passed, or when input is pending and at least 4 milliseconds have passed. Sleeping 16 milliseconds and rendering unconditionally put input-to-write above 9 milliseconds, because a keystroke waited for the next tick.
+
+`process.stdout.columns` is a plain data property in Bun 1.4.0, not a getter, and it does not change when the terminal is resized; `process.stdout.getWindowSize()` returns the same stale pair. `Bun.Terminal.resize` also does not deliver `SIGWINCH` to the child, so the signal path could not be exercised at all. The host terminal therefore asks the terminal itself with `CSI 18 t` during the handshake and again on every `SIGWINCH`, and prefers the `CSI 8 ; rows ; cols t` answer over the cached property. Terminals that ignore `CSI 18 t` fall back to the property.
+
+`Bun.stringWidth` and `unicode-width` 0.2.2 disagree on two of the forty hard graphemes the calibration set prints: the Sinhala cluster `U+0D95 U+0DCF`, where Bun says two columns and the crate says one, and the Devanagari cluster `U+0928 U+093F`, where Bun says one and the crate says two. Every CJK character, emoji, ZWJ sequence, flag, skin-tone modifier, and combining mark in the set agrees. Layout keeps `Bun.stringWidth` because it only chooses wrap and truncation points, and Rust owns cell placement, so a disagreement shifts a line break rather than corrupting the grid. `cellWidth` is exported from the core for the width-critical paths that come later. Which of the two matches a real terminal is still unmeasured; the pseudo-terminal has no renderer to ask.
 
 The scaffold already proves the packaging half. `bun build --compile` embeds the napi-rs `.node` file through the generated loader, and the resulting single binary runs from any directory and calls into Rust. Bun 1.4.0 or newer is required for that step; 1.3.12 writes a code signature macOS rejects.
 
@@ -70,6 +97,6 @@ Distribution uses compiled Bun executables with the Rust library built per platf
 
 Whether the Rust core builds its later VT parser on the `vte` crate or on `alacritty_terminal` is undecided, with `vte` favoured for its dependency footprint. The first PTY screen decides.
 
-Whether `Bun.stringWidth` and `unicode-width` agree on hard graphemes is unmeasured. The rendering milestone's calibration step decides which side owns the width table.
+Which width table a real terminal follows for the two Indic clusters where `Bun.stringWidth` and `unicode-width` disagree is unmeasured. `exsomnis render-demo --calibrate` prints the forty hard graphemes, reads the cursor position back with `CSI 6 n`, and reports the three answers side by side; it needs a run in Terminal.app, Ghostty, and iTerm2 to settle.
 
 The syntax highlighting engine in the Rust core is undecided. tree-sitter and syntect are the candidates.

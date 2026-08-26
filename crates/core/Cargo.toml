@@ -14,6 +14,8 @@ workspace = true
 [dependencies]
 napi = { version = "3", default-features = false, features = ["napi4", "dyn-symbols"] }
 napi-derive = { version = "3", default-features = false, features = ["type-def", "strict"] }
+unicode-segmentation = "1.13.3"
+unicode-width = "0.2.2"
 
 [build-dependencies]
 napi-build = "2"

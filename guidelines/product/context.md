@@ -32,7 +32,11 @@ Agent screens for the first providers, Codex CLI and Claude Code, talk to the in
 
 A thread has one provider in the first release. Changing the provider for new threads does not move conversation history. The shared context between threads is the filesystem, Git state, and project metadata.
 
-Diff is a first-class screen. It shows working changes, branch changes since the merge-base, or the comparison for a linked pull request. The screen labels which comparison is selected so the user always knows what is under review.
+Diff is a first-class screen. The first release shows "working tree vs HEAD" in a two-pane view. The left pane lists tracked and untracked files with their status and added and removed line counts. The right pane shows the selected file's unified diff with old and new line numbers. The file list and hunk view scroll independently. Long lines end with a truncation marker instead of scrolling horizontally.
+
+Opening Diff refreshes it once. Provider file changes and turn finalization refresh the selected thread while Diff is open, and `r` refreshes on demand. The screen does not poll Git, and changes in an unselected thread do not run a refresh. A repository without a commit shows its staged and untracked files instead of failing on the missing `HEAD`.
+
+Branch changes since the merge-base and the comparison for a linked pull request come after the working-tree view. Each mode will keep an explicit comparison label so the user always knows what is under review.
 
 Files browses the task's worktree. It has a tree and a viewer with syntax highlighting. Clicking a file in Diff opens it in the same viewer at the same line. Files is read-only in the first version. Editing stays in the user's editor.
 

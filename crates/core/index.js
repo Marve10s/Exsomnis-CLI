@@ -703,3 +703,6 @@ module.exports = nativeBinding
 module.exports.Screen = nativeBinding.Screen
 module.exports.cellWidth = nativeBinding.cellWidth
 module.exports.coreVersion = nativeBinding.coreVersion
+module.exports.DiffLineKind = nativeBinding.DiffLineKind
+module.exports.DiffStatus = nativeBinding.DiffStatus
+module.exports.parseUnifiedDiff = nativeBinding.parseUnifiedDiff

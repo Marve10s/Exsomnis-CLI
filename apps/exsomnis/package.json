@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",
+    "@effect/sql-sqlite-bun": "catalog:",
     "@exsomnis/core": "workspace:*",
     "effect": "catalog:"
   },

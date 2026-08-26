@@ -10,6 +10,7 @@
     "catalog": {
       "effect": "4.0.0-rc.112",
       "@effect/platform-bun": "4.0.0-rc.112",
+      "@effect/sql-sqlite-bun": "4.0.0-rc.112",
       "@effect/language-service": "0.87.2",
       "@effect/tsgo": "0.37.0",
       "@napi-rs/cli": "3.8.6",

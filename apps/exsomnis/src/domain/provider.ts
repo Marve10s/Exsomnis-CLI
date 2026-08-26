@@ -128,6 +128,13 @@ export type DeltaPart = typeof DeltaPart.Type;
 export const SessionCloseReason = Schema.Literals(['exit', 'error', 'closed']);
 export type SessionCloseReason = typeof SessionCloseReason.Type;
 
+export const TokenUsage = Schema.Struct({
+  used: Schema.Finite,
+  contextWindow: Schema.optionalKey(Schema.Finite),
+  total: Schema.optionalKey(Schema.Finite),
+});
+export type TokenUsage = typeof TokenUsage.Type;
+
 export const ProviderEvent = Schema.Union([
   Schema.TaggedStruct('TurnStarted', { turn: ProviderTurnRef }),
   Schema.TaggedStruct('TurnCompleted', {
@@ -152,11 +159,7 @@ export const ProviderEvent = Schema.Union([
   Schema.TaggedStruct('ApprovalRequested', { request: ApprovalRequest }),
   Schema.TaggedStruct('ApprovalResolved', { requestId: RequestId }),
   Schema.TaggedStruct('ModelChanged', { selection: ModelSelection }),
-  Schema.TaggedStruct('TokenUsage', {
-    used: Schema.Finite,
-    contextWindow: Schema.optionalKey(Schema.Finite),
-    total: Schema.optionalKey(Schema.Finite),
-  }),
+  Schema.TaggedStruct('TokenUsage', TokenUsage.fields),
   Schema.TaggedStruct('WorkingTreeChanged', {}),
   Schema.TaggedStruct('Warning', { message: Schema.String }),
   Schema.TaggedStruct('SessionClosed', {

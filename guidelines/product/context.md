@@ -54,6 +54,8 @@ Keyboard commands sit behind one configurable leader key, `Ctrl+G` by default. A
 
 The first release binds `Ctrl+G` with `j` and `k` to move between threads, `n` to create one, `b` to collapse the sidebar, `c` and `d` to switch between the chat and diff screens, `?` to list every binding, and `q` to quit. `PageUp`, `PageDown`, `Home`, and `End` scroll the transcript, which follows the tail until the reader scrolls away from it. In the composer, `Enter` sends, `Alt+Enter` inserts a newline, `Shift+Enter` does the same where the terminal reports it, and `Esc` interrupts the running turn.
 
+While Diff is the selected screen it takes any key it uses before the composer sees it: `j` and `k` move the file selection, `Enter` moves focus into the hunk pane, `Escape` moves it back, `PageUp` and `PageDown` scroll the hunks, and `r` refreshes. Keys it does not use still reach the composer, so `Ctrl+G c` returns to chat before typing a message.
+
 The provider chosen with `/provider` applies to threads created in the same session. It is not written to the database yet, so a relaunch starts from Codex again.
 
 Inside an Agent, Shell, or Tests screen the child process owns the mouse when it has asked for mouse reporting. Exsomnis forwards mouse events to it. When the child has not asked, the wheel scrolls that screen's scrollback and a click gives the screen focus.

@@ -10,6 +10,11 @@ import {
   activeViewAtom,
   approvalCursorAtom,
   attentionAtom,
+  diffDocumentAtom,
+  diffFileScrollAtom,
+  diffFocusedPaneAtom,
+  diffHunkScrollAtom,
+  diffSelectionAtom,
   composerFor,
   defaultProviderAtom,
   focusAtom,
@@ -38,6 +43,8 @@ import type { TerminalSize } from '@/terminal/host-terminal.ts';
 import { approvalRegion, paintApproval } from '@/widgets/approval.ts';
 import { displayOf, shortKey } from '@/widgets/bindings.ts';
 import { paintComposer } from '@/widgets/composer.ts';
+import type { DiffViewState } from '@/widgets/diff.ts';
+import { paintDiffView } from '@/widgets/diff.ts';
 import type { ComposerCursor } from '@/widgets/composer.ts';
 import { paintHeader, runningLabel, headerRunningRegion } from '@/widgets/header.ts';
 import { helpRegion, paintHelp } from '@/widgets/help.ts';
@@ -49,7 +56,6 @@ import type { SidebarRow } from '@/widgets/sidebar.ts';
 import { paintStatus } from '@/widgets/status.ts';
 import { paintTranscript, transcriptContent } from '@/widgets/transcript.ts';
 import * as theme from '@/widgets/theme.ts';
-import { diffPlaceholder } from '@/widgets/views.ts';
 
 type ShellFocus = 'sidebar' | 'chat' | 'diff' | 'palette' | 'approval' | 'help';
 
@@ -185,6 +191,19 @@ const statusHints = (bindings: ReadonlyArray<Binding>): string =>
     `${displayOf(bindings, 'quit')} quit`,
   ].join('  ');
 
+export const diffViewState = (
+  registry: AtomRegistry.AtomRegistry,
+  threadId: ThreadId,
+  region: Region,
+): DiffViewState => ({
+  document: registry.get(diffDocumentAtom(threadId)),
+  selectedFile: registry.get(diffSelectionAtom(threadId)),
+  fileScroll: registry.get(diffFileScrollAtom(threadId)),
+  hunkScroll: registry.get(diffHunkScrollAtom(threadId)),
+  focusedPane: registry.get(diffFocusedPaneAtom(threadId)),
+  region,
+});
+
 const projectNameFor = (deps: ShellDeps, thread: Thread): string =>
   deps.registry.get(projectsAtom).find((project) => project.id === thread.projectId)?.name ?? '';
 
@@ -301,8 +320,8 @@ export const makePaint = (deps: ShellDeps) => (builder: FrameBuilder, size: Term
         ],
       });
     } else if (region.id === 'transcript') {
-      if (activeView === 'diff') {
-        diffPlaceholder(builder, region);
+      if (activeView === 'diff' && state.thread !== undefined) {
+        paintDiffView(builder, region, diffViewState(registry, state.thread.id, region));
       } else {
         paintTranscript(
           builder,

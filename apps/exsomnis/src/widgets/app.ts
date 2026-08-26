@@ -14,6 +14,12 @@ import {
   approvalCursorAtom,
   attentionAtom,
   composerAtom,
+  diffDocumentAtom,
+  diffFileScrollAtom,
+  diffFocusedPaneAtom,
+  diffHunkScrollAtom,
+  diffRefreshTriggerAtom,
+  diffSelectionAtom,
   defaultProviderAtom,
   draftComposerAtom,
   focusAtom,
@@ -76,9 +82,16 @@ const perThreadAtoms = (threadId: ThreadId): ReadonlyArray<Atom.Atom<unknown>> =
   transcriptOffsetAtom(threadId),
   transcriptFollowAtom(threadId),
   nativeCommandsAtom(threadId),
+  diffDocumentAtom(threadId),
+  diffSelectionAtom(threadId),
+  diffFileScrollAtom(threadId),
+  diffHunkScrollAtom(threadId),
+  diffFocusedPaneAtom(threadId),
 ];
 
-const watchThreads = Effect.fn('App.watchThreads')(function* () {
+const watchThreads = Effect.fn('App.watchThreads')(function* (
+  onDiffTrigger: (threadId: ThreadId) => void,
+) {
   const registry = yield* AtomRegistry.AtomRegistry;
   const cancels = new Map<ThreadId, ReadonlyArray<() => void>>();
   const bump = () => {
@@ -96,10 +109,16 @@ const watchThreads = Effect.fn('App.watchThreads')(function* () {
     }
     for (const threadId of present) {
       if (!cancels.has(threadId)) {
-        cancels.set(
-          threadId,
-          perThreadAtoms(threadId).map((atom) => registry.subscribe(atom, bump)),
-        );
+        cancels.set(threadId, [
+          ...perThreadAtoms(threadId).map((atom) => registry.subscribe(atom, bump)),
+          registry.subscribe(diffRefreshTriggerAtom(threadId), (trigger) => {
+            bump();
+            if (trigger.enabled) {
+              onDiffTrigger(threadId);
+            }
+          }),
+        ]);
+        registry.get(diffRefreshTriggerAtom(threadId));
       }
     }
     bump();
@@ -153,7 +172,19 @@ export const runApp = Effect.fn('App.run')(function* () {
   const size = yield* terminal.size;
   registry.set(terminalSizeAtom, size);
 
-  yield* watchThreads();
+  const diffRequests = yield* Queue.sliding<ThreadId>(32);
+  yield* watchThreads((threadId) => {
+    Queue.offerUnsafe(diffRequests, threadId);
+  });
+
+  yield* Effect.forkScoped(
+    Effect.forever(
+      Effect.gen(function* () {
+        const threadId = yield* Queue.take(diffRequests);
+        yield* actions.refreshDiff(threadId);
+      }),
+    ),
+  );
 
   const root = yield* git.topLevel(process.cwd());
   const project = yield* threads.ensureProject(root);

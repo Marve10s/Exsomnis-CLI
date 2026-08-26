@@ -3,6 +3,7 @@ import { Effect, Layer, Logger } from 'effect';
 import { Command, Flag } from 'effect/unstable/cli';
 import { AtomRegistry } from 'effect/unstable/reactivity';
 import { CoreNative } from '@/core-native.ts';
+import { DiffSource } from '@/git/diff-source.ts';
 import { GitService } from '@/git/git.ts';
 import { WorktreeService } from '@/git/worktree.ts';
 import { ModelService } from '@/orchestration/model-service.ts';
@@ -60,6 +61,7 @@ const worktrees = WorktreeService.layer.pipe(
   Layer.provide(Layer.mergeAll(gitLayer, infrastructure)),
 );
 const providers = ProviderRegistry.layer.pipe(Layer.provide(infrastructure));
+const diffSource = DiffSource.layer.pipe(Layer.provide(Layer.mergeAll(gitLayer, CoreNative.layer)));
 const services = Layer.mergeAll(ThreadService.layer, ModelService.layer).pipe(
   Layer.provide(Layer.mergeAll(repositories, worktrees, gitLayer, providers, infrastructure)),
 );
@@ -72,6 +74,7 @@ BunRuntime.runMain(
         infrastructure,
         CoreNative.layer,
         gitLayer,
+        diffSource,
         providers,
         services,
         Layer.succeed(Logger.LogToStderr, true),

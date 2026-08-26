@@ -8,6 +8,8 @@ import type {
   NativeCommand,
 } from '@/domain/provider.ts';
 import type { Thread } from '@/domain/thread.ts';
+import type { NativeCoreError } from '@/core-native.ts';
+import { DiffSource } from '@/git/diff-source.ts';
 import type { GitError } from '@/git/git.ts';
 import type { WorktreeError } from '@/git/worktree.ts';
 import { ModelService } from '@/orchestration/model-service.ts';
@@ -18,6 +20,7 @@ import { ProviderRegistry } from '@/providers/registry.ts';
 import {
   composerAtom,
   defaultProviderAtom,
+  diffDocumentAtom,
   emptyComposer,
   helpVisibleAtom,
   modelsAtom,
@@ -36,6 +39,7 @@ export type InterfaceError =
   | PersistenceError
   | GitError
   | WorktreeError
+  | NativeCoreError
   | ProviderError
   | ProviderUnavailableError;
 
@@ -46,6 +50,8 @@ const describeError = (error: InterfaceError): string => {
     case 'GitError':
       return `${error.command}: ${error.message}`;
     case 'WorktreeError':
+      return `${error.operation}: ${error.message}`;
+    case 'NativeCoreError':
       return `${error.operation}: ${error.message}`;
     case 'ProviderError':
       return `${error.provider} ${error.operation}: ${error.message}`;
@@ -64,6 +70,7 @@ export interface InterfaceActions {
   readonly applyModel: (selection: ModelSelection) => Effect.Effect<void>;
   readonly applyApproval: (approval: ApprovalSettings) => Effect.Effect<void>;
   readonly loadCommands: Effect.Effect<void>;
+  readonly refreshDiff: (threadId: ThreadId) => Effect.Effect<void>;
   readonly loadModels: (provider: ProviderId) => Effect.Effect<void>;
 }
 
@@ -72,7 +79,9 @@ export const makeActions = Effect.fn('Interface.makeActions')(function* () {
   const threads = yield* ThreadService;
   const models = yield* ModelService;
   const providers = yield* ProviderRegistry;
+  const diffs = yield* DiffSource;
   const scope = yield* Effect.scope;
+  const diffLoads = new Map<ThreadId, boolean>();
 
   const setStatus = (message: string) =>
     Effect.sync(() => registry.set(statusMessageAtom, Option.some(message)));
@@ -215,6 +224,35 @@ export const makeActions = Effect.fn('Interface.makeActions')(function* () {
     );
   });
 
+  const loadDiff = Effect.fn('Interface.loadDiff')(function* (threadId: ThreadId) {
+    const thread = registry.get(threadsAtom).find((entry) => entry.id === threadId);
+    if (thread === undefined) {
+      return;
+    }
+    const result = yield* diffs.load(thread.worktreePath);
+    registry.set(diffDocumentAtom(threadId), result.document);
+  });
+
+  const refreshDiff: (threadId: ThreadId) => Effect.Effect<void> = (threadId) =>
+    Effect.suspend(() => {
+      if (diffLoads.get(threadId) !== undefined) {
+        diffLoads.set(threadId, true);
+        return Effect.void;
+      }
+      diffLoads.set(threadId, false);
+      return spawn(
+        loadDiff(threadId).pipe(
+          Effect.ensuring(
+            Effect.suspend(() => {
+              const again = diffLoads.get(threadId) === true;
+              diffLoads.delete(threadId);
+              return again ? refreshDiff(threadId) : Effect.void;
+            }),
+          ),
+        ),
+      );
+    });
+
   const loadModels = (provider: ProviderId) =>
     Effect.suspend(() =>
       registry.get(modelsAtom(provider)).length > 0
@@ -232,6 +270,7 @@ export const makeActions = Effect.fn('Interface.makeActions')(function* () {
     applyModel,
     applyApproval,
     loadCommands,
+    refreshDiff,
     loadModels,
   } satisfies InterfaceActions;
 });

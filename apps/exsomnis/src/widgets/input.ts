@@ -7,6 +7,10 @@ import type { Region } from '@/render/layout.ts';
 import {
   activeViewAtom,
   approvalCursorAtom,
+  diffFileScrollAtom,
+  diffFocusedPaneAtom,
+  diffHunkScrollAtom,
+  diffSelectionAtom,
   composerFor,
   defaultProviderAtom,
   emptyComposer,
@@ -25,18 +29,25 @@ import {
 import type { ComposerState, PaletteMode } from '@/state/atoms.ts';
 import type { KeyEvent, MouseEvent, TerminalInput } from '@/terminal/input-decoder.ts';
 import { decisionForKey } from '@/widgets/approval.ts';
+import type { DiffInputResult } from '@/widgets/diff.ts';
+import { handleDiffInput } from '@/widgets/diff.ts';
 import { LEADER_ACTIONS, withPhysicalKey } from '@/widgets/bindings.ts';
 import { deleteBackward, deleteForward, insertText, moveBy } from '@/widgets/composer.ts';
 import type { PaletteAction, PaletteEntry } from '@/widgets/palette.ts';
 import { threadRowIndexes } from '@/widgets/sidebar.ts';
 import type { ShellDeps, ShellState } from '@/widgets/shell.ts';
-import { currentPaletteEntries, readShellState } from '@/widgets/shell.ts';
+import { currentPaletteEntries, diffViewState, readShellState } from '@/widgets/shell.ts';
 
 const SCROLL_STEP = 3;
 
 export interface InputDeps extends ShellDeps {
   readonly actions: InterfaceActions;
   readonly quit: Effect.Effect<void>;
+}
+
+interface DiffRoute {
+  readonly threadId: ThreadId;
+  readonly result: DiffInputResult;
 }
 
 const isPrintable = (event: KeyEvent): boolean =>
@@ -173,6 +184,30 @@ export const makeRouter = (deps: InputDeps) => {
         return Effect.void;
     }
   };
+
+  const routeToDiff = (current: ShellState, event: TerminalInput): DiffRoute | undefined => {
+    const thread = current.thread;
+    if (thread === undefined || registry.get(activeViewAtom) !== 'diff') {
+      return undefined;
+    }
+    const region = regionById(registry.get(regionsAtom), 'transcript');
+    if (region === undefined) {
+      return undefined;
+    }
+    return {
+      threadId: thread.id,
+      result: handleDiffInput(event, diffViewState(registry, thread.id, region)),
+    };
+  };
+
+  const applyDiffRoute = (route: DiffRoute): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      registry.set(diffSelectionAtom(route.threadId), route.result.state.selectedFile);
+      registry.set(diffFileScrollAtom(route.threadId), route.result.state.fileScroll);
+      registry.set(diffHunkScrollAtom(route.threadId), route.result.state.hunkScroll);
+      registry.set(diffFocusedPaneAtom(route.threadId), route.result.state.focusedPane);
+      return route.result.refreshRequested ? actions.refreshDiff(route.threadId) : Effect.void;
+    });
 
   const activatePalette = (entry: PaletteEntry): Effect.Effect<void> => {
     if (entry.disabled) {
@@ -423,7 +458,11 @@ export const makeRouter = (deps: InputDeps) => {
       if (LEADER_ACTIONS.has(action)) {
         return applyLeaderAction(action);
       }
-      return current.focus === 'chat' || current.focus === 'diff' || current.focus === 'sidebar'
+      if (current.focus === 'diff') {
+        const route = routeToDiff(current, event);
+        return route !== undefined && route.result.handled ? applyDiffRoute(route) : Effect.void;
+      }
+      return current.focus === 'chat' || current.focus === 'sidebar'
         ? applyScrollAction(action)
         : Effect.void;
     }
@@ -441,7 +480,12 @@ export const makeRouter = (deps: InputDeps) => {
         return handlePaletteKey(current, event);
       case 'sidebar':
         return handleSidebarKey(current, event);
-      case 'diff':
+      case 'diff': {
+        const route = routeToDiff(current, event);
+        return route !== undefined && route.result.handled
+          ? applyDiffRoute(route)
+          : handleComposerKey(current, event);
+      }
       case 'chat':
         return handleComposerKey(current, event);
     }
@@ -454,6 +498,10 @@ export const makeRouter = (deps: InputDeps) => {
       return Effect.void;
     }
     const current = state();
+    const diffRoute = routeToDiff(current, event);
+    if (diffRoute !== undefined && diffRoute.result.handled) {
+      return applyDiffRoute(diffRoute);
+    }
     if (event.kind === 'wheelUp' || event.kind === 'wheelDown') {
       const delta = event.kind === 'wheelUp' ? -SCROLL_STEP : SCROLL_STEP;
       if (region.id === 'palette') {

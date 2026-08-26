@@ -21,4 +21,7 @@ Codex CLI and Claude Code are driven over their protocols, not a pseudo-terminal
 - Approval prompts are answered with the four decisions both providers share: accept, accept for session, decline, cancel. Cancel also interrupts the turn. An "accept for session" answer to Claude Code returns only session-scoped permission suggestions.
 - A pending approval can only be answered by the session that raised it. After a restart it is shown as stale, and the user is offered interrupt or restart.
 - The `result` message ends a Claude Code turn, and `turn/completed` ends a Codex turn. Process or query exit is a failure path, not the normal end of a turn.
+- Interrupting a Claude Code turn closes its query: the adapter emits `TurnCompleted` with `interrupted` and then `SessionClosed`. The next turn on that thread opens a new session with the stored resume reference. Codex keeps its session open across an interrupt.
+- Native command names carry no leading slash in `NativeCommand.name`; the palette adds it. Both adapters follow this.
+- Under Codex's `on-request` policy with the `workspace-write` sandbox, commands that stay inside the sandbox run without an approval prompt; prompts arrive for escalations and under `untrusted`. Claude Code prompts according to the permission mode and the user's own settings rules.
 - The Claude Agent SDK bundles a protocol matched to its own Claude Code version. Exsomnis pins the SDK to the installed CLI's minor version, passes `pathToClaudeCodeExecutable` so the user's own binary runs, and warns at startup when the two drift.

@@ -4,7 +4,7 @@ This is the canonical instruction file for coding agents working on Exsomnis CLI
 
 ## Project status
 
-The workspace is scaffolded, the strict lint and CI policy is in place, and every check passes. The first release is being built in milestones: the domain schemas, provider contract, and state atoms are in place, and the Codex and Claude Code services register but report themselves unavailable until their adapters land. The rendering core is in place as well: the Rust compositor, the host terminal, input decoding, hotkeys, layout, and the render loop, with `exsomnis render-demo` as their proof. `guidelines/product/context.md` describes the interface, `guidelines/architecture/stack.md` the rendering core and the measurements it passed.
+The first release is implemented on `mvp/foundation`: the three-column interface, the Codex and Claude Code adapters over their protocols, threads with SQLite persistence and Git worktrees, the Rust compositor with the host terminal and input layers, and the diff view. Every flow in the plan was exercised through a pseudo-terminal against the real CLIs; what still needs a human at a real terminal is listed in `guidelines/workflow/verification.md`. `guidelines/product/context.md` describes the interface, `guidelines/architecture/stack.md` the rendering core and the measurements it passed.
 
 ## Guidelines
 

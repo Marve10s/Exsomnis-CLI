@@ -84,6 +84,7 @@ export class ThreadService extends Context.Service<
       command: NativeCommand,
       args: string,
     ) => Effect.Effect<void, ThreadServiceError>;
+    readonly refreshThreads: Effect.Effect<ReadonlyArray<Thread>, ThreadServiceError>;
     readonly reconcileStartup: Effect.Effect<ReadonlyArray<ThreadId>, ThreadServiceError>;
     readonly inspectWorktreeRemoval: (
       threadId: ThreadId,
@@ -420,6 +421,13 @@ export class ThreadService extends Context.Service<
       return thread;
     });
 
+    const refreshThreads = Effect.gen(function* () {
+      const all = yield* threads.list;
+      yield* Effect.sync(() => atoms.set(threadsAtom, all));
+      yield* Effect.forEach(all, (thread) => syncThread(thread.id), { discard: true });
+      return all;
+    }).pipe(Effect.withSpan('ThreadService.refreshThreads'));
+
     const reconcileStartup = threads.reconcileStartup.pipe(
       Effect.tap((threadIds) => Effect.forEach(threadIds, syncThread, { discard: true })),
       Effect.withSpan('ThreadService.reconcileStartup'),
@@ -457,6 +465,7 @@ export class ThreadService extends Context.Service<
       setApproval,
       listCommands,
       runCommand,
+      refreshThreads,
       reconcileStartup,
       inspectWorktreeRemoval,
       removeWorktree,

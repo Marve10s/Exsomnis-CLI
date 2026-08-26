@@ -42,9 +42,9 @@ The scaffold already proves the packaging half. `bun build --compile` embeds the
 
 ## Persistence and Git
 
-SQLite through `bun:sqlite` stores facts that survive a restart: tasks, screen definitions, provider resume references, selected screens, activity history, and settings. Live process handles and terminal buffers stay in memory on the Rust side.
+SQLite through `@effect/sql-sqlite-bun` stores projects, threads, turns, timeline items, pending requests, provider resume references, model cache entries, and settings. Startup reconciliation marks active turns as interrupted and pending requests as stale because live provider sessions do not survive a process exit. Live process handles and terminal buffers stay in memory.
 
-Git operations use the installed Git binary. This keeps repository behavior consistent with the user's credentials, configuration, hooks, and worktrees.
+Git operations use the installed Git binary through Effect's child process service. Each thread gets a worktree from the remote default branch, with the current branch as the fallback when the remote has no default branch reference. Thread deletion and forced worktree removal remain separate operations so the interface can show tracked and untracked change counts before removal.
 
 ## Alternatives considered
 
@@ -73,4 +73,3 @@ Whether the Rust core builds its later VT parser on the `vte` crate or on `alacr
 Whether `Bun.stringWidth` and `unicode-width` agree on hard graphemes is unmeasured. The rendering milestone's calibration step decides which side owns the width table.
 
 The syntax highlighting engine in the Rust core is undecided. tree-sitter and syntect are the candidates.
-

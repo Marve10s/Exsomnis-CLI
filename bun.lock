@@ -25,6 +25,7 @@
       "dependencies": {
         "@anthropic-ai/claude-agent-sdk": "catalog:",
         "@effect/platform-bun": "catalog:",
+        "@effect/sql-sqlite-bun": "catalog:",
         "@exsomnis/core": "workspace:*",
         "effect": "catalog:",
       },
@@ -59,6 +60,7 @@
     "@anthropic-ai/claude-agent-sdk": "0.3.245",
     "@effect/language-service": "0.87.2",
     "@effect/platform-bun": "4.0.0-rc.112",
+    "@effect/sql-sqlite-bun": "4.0.0-rc.112",
     "@effect/tsgo": "0.37.0",
     "@napi-rs/cli": "3.8.6",
     "@types/bun": "1.4.0",
@@ -95,6 +97,8 @@
     "@effect/platform-bun": ["@effect/platform-bun@4.0.0-rc.112", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-rc.112" }, "peerDependencies": { "effect": "^4.0.0-rc.112" } }, "sha512-Y5n2HhV/vsbrJls9ukX42RL7zqXQxISHegWFsP9njsCyDmGTnq7QYSO82rglwrLPwtTrv5dkSRTuGw4+oXxgMg=="],
 
     "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-rc.112", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.21.3" }, "peerDependencies": { "effect": "^4.0.0-rc.112" } }, "sha512-ttjz0xKamFN7vL8pNDYVwddJLjZvqKePc05djlz2VcdaKbLsnYbtMnL1rbOfHgEnIUSHGh7FkjaN4DM1Ov81sQ=="],
+
+    "@effect/sql-sqlite-bun": ["@effect/sql-sqlite-bun@4.0.0-rc.112", "", { "peerDependencies": { "effect": "^4.0.0-rc.112" } }, "sha512-EqR8pWZo3VzedRvP6qo5HcfqNmFvSa+sQLWQl3oBMx2KY1FCc8NYjep79wYjNkW0qABnffrPUXCMTOncd1A+5g=="],
 
     "@effect/tsgo": ["@effect/tsgo@0.37.0", "", { "optionalDependencies": { "@effect/tsgo-darwin-arm64": "0.37.0", "@effect/tsgo-darwin-x64": "0.37.0", "@effect/tsgo-linux-arm": "0.37.0", "@effect/tsgo-linux-arm64": "0.37.0", "@effect/tsgo-linux-x64": "0.37.0", "@effect/tsgo-win32-arm64": "0.37.0", "@effect/tsgo-win32-x64": "0.37.0" }, "bin": { "effect-tsgo": "dist/effect-tsgo.cjs" } }, "sha512-jCJIUcNgI0vaoylao/mhOv+7hDfaJRwZJSJrg5kA/FCQ4aGDhAYqyQx+hoZh8AW3pzD9Qp1RWtUsVFqOzIOENw=="],
 

@@ -10,6 +10,7 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "catalog:",
     "@effect/platform-bun": "catalog:",
+    "@effect/sql-sqlite-bun": "catalog:",
     "@exsomnis/core": "workspace:*",
     "effect": "catalog:"
   },

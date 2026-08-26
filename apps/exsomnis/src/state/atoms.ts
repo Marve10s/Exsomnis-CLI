@@ -1,7 +1,7 @@
 import { Option } from 'effect';
 import { Atom } from 'effect/unstable/reactivity';
 import type { ProviderId, ThreadId } from '@/domain/ids.ts';
-import type { ModelInfo } from '@/domain/provider.ts';
+import type { ModelInfo, TokenUsage } from '@/domain/provider.ts';
 import type {
   ActiveView,
   Attention,
@@ -32,3 +32,7 @@ export const attentionAtom = Atom.family((_threadId: ThreadId) => Atom.make<Atte
 export const modelsAtom = Atom.family((_provider: ProviderId) =>
   Atom.make<ReadonlyArray<ModelInfo>>([]),
 );
+export const tokenUsageAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make<Option.Option<TokenUsage>>(Option.none()),
+);
+export const workingTreeVersionAtom = Atom.family((_threadId: ThreadId) => Atom.make(0));

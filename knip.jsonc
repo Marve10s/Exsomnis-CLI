@@ -9,6 +9,7 @@
         "src/errors.ts",
         "src/domain/*.ts",
         "src/providers/provider.ts",
+        "src/providers/claude/*.ts",
         "src/state/atoms.ts",
       ],
     },

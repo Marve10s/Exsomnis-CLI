@@ -8,6 +8,7 @@
     "compile": "bun build --compile --minify --sourcemap ./src/bin.ts --outfile ../../dist/exsomnis"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "catalog:",
     "@effect/platform-bun": "catalog:",
     "@exsomnis/core": "workspace:*",
     "effect": "catalog:"

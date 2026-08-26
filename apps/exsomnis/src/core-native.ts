@@ -1,10 +1,10 @@
-import type { FrameStats } from '@exsomnis/core';
-import { Screen, cellWidth, coreVersion } from '@exsomnis/core';
+import type { DiffDocument, DiffFile, DiffLine, FrameStats } from '@exsomnis/core';
+import { Screen, cellWidth, coreVersion, parseUnifiedDiff } from '@exsomnis/core';
 import { Context, Effect, Layer, Schema } from 'effect';
 import type { Scope } from 'effect';
 import { serializeUnknownError } from '@/errors.ts';
 
-export type { FrameStats };
+export type { DiffDocument, DiffFile, DiffLine, FrameStats };
 
 export class NativeCoreError extends Schema.TaggedError<NativeCoreError>()('NativeCoreError', {
   operation: Schema.String,
@@ -46,6 +46,7 @@ export class CoreNative extends Context.Service<
   {
     readonly version: string;
     readonly cellWidth: (text: string) => number;
+    readonly parseUnifiedDiff: (text: string) => Effect.Effect<DiffDocument, NativeCoreError>;
     readonly openScreen: (
       columns: number,
       rows: number,
@@ -55,6 +56,7 @@ export class CoreNative extends Context.Service<
   make: Effect.sync(() => ({
     version: coreVersion(),
     cellWidth,
+    parseUnifiedDiff: (text: string) => attempt('parseUnifiedDiff', () => parseUnifiedDiff(text)),
     openScreen: (columns: number, rows: number) =>
       Effect.acquireRelease(
         attempt('openScreen', () => new Screen(columns, rows)),

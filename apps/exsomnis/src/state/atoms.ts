@@ -2,6 +2,7 @@ import { Option } from 'effect';
 import { Atom } from 'effect/unstable/reactivity';
 import type { ProviderId, ThreadId } from '@/domain/ids.ts';
 import type { ModelInfo, TokenUsage } from '@/domain/provider.ts';
+import type { DiffDocument } from '@/core-native.ts';
 import type { Region } from '@/render/layout.ts';
 import type { TerminalSize } from '@/terminal/host-terminal.ts';
 import type {
@@ -41,4 +42,48 @@ export const tokenUsageAtom = Atom.family((_threadId: ThreadId) =>
 );
 export const workingTreeVersionAtom = Atom.family((_threadId: ThreadId) =>
   Atom.make(0).pipe(Atom.keepAlive),
+);
+export const diffDocumentAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make<DiffDocument>({ files: [] }).pipe(Atom.keepAlive),
+);
+export const diffSelectionAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make(0).pipe(Atom.keepAlive),
+);
+export const diffFileScrollAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make(0).pipe(Atom.keepAlive),
+);
+export const diffHunkScrollAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make(0).pipe(Atom.keepAlive),
+);
+export type DiffPane = 'files' | 'hunks';
+export const diffFocusedPaneAtom = Atom.family((_threadId: ThreadId) =>
+  Atom.make<DiffPane>('files').pipe(Atom.keepAlive),
+);
+
+export interface DiffRefreshTrigger {
+  readonly enabled: boolean;
+  readonly workingTreeVersion: number;
+  readonly finalizedTurnId: string;
+}
+
+export const diffRefreshTriggerAtom = Atom.family((threadId: ThreadId) =>
+  Atom.make((get): DiffRefreshTrigger => {
+    const selected = get(selectedThreadIdAtom);
+    const enabled =
+      get(activeViewAtom) === 'diff' && Option.isSome(selected) && selected.value === threadId;
+    const finalized = get(turnsAtom(threadId)).findLast((turn) => Option.isSome(turn.finishedAt));
+    return {
+      enabled,
+      workingTreeVersion: get(workingTreeVersionAtom(threadId)),
+      finalizedTurnId: finalized?.id ?? '',
+    };
+  }).pipe(
+    Atom.withEquality<DiffRefreshTrigger>(
+      (left, right) =>
+        left.enabled === right.enabled &&
+        left.workingTreeVersion === right.workingTreeVersion &&
+        left.finalizedTurnId === right.finalizedTurnId,
+    ),
+    Atom.keepAlive,
+  ),
 );

@@ -4,6 +4,7 @@
 )]
 
 mod color;
+mod diff;
 mod error;
 mod grid;
 mod ops;

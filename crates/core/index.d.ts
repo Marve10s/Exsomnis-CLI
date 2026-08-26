@@ -14,6 +14,50 @@ export declare function cellWidth(text: string): number
 
 export declare function coreVersion(): string
 
+export interface DiffDocument {
+  files: Array<DiffFile>
+}
+
+export interface DiffFile {
+  oldPath: string
+  newPath: string
+  status: DiffStatus
+  binary: boolean
+  additions: number
+  deletions: number
+  hunks: Array<DiffHunk>
+}
+
+export interface DiffHunk {
+  header: string
+  oldStart: number
+  oldCount: number
+  newStart: number
+  newCount: number
+  lines: Array<DiffLine>
+}
+
+export interface DiffLine {
+  kind: DiffLineKind
+  text: string
+  oldLineNumber?: number
+  newLineNumber?: number
+}
+
+export declare const enum DiffLineKind {
+  Context = 'context',
+  Added = 'added',
+  Removed = 'removed',
+  NoNewline = 'noNewline'
+}
+
+export declare const enum DiffStatus {
+  Added = 'added',
+  Modified = 'modified',
+  Deleted = 'deleted',
+  Renamed = 'renamed'
+}
+
 export interface FrameStats {
   frames: number
   drawMicrosMean: number
@@ -27,3 +71,5 @@ export interface FrameStats {
   bytesTotal: number
   cellsTotal: number
 }
+
+export declare function parseUnifiedDiff(text: string): DiffDocument
